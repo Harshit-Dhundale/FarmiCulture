@@ -1,8 +1,8 @@
-// client/src/features/dashboard/FarmDetailsForm.js
 import React, { useState } from 'react';
 import { farmAPI } from '../../utils/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import './FarmDetailsForm.css';
+import { FiHome, FiMapPin, FiMaximize, FiCrop, FiBookmark, FiInfo } from 'react-icons/fi';
+import styles from './FarmDetailsForm.module.css';
 
 const FarmDetailsForm = ({ farmData, onUpdate, userId }) => {
   const [formData, setFormData] = useState({
@@ -30,7 +30,7 @@ const FarmDetailsForm = ({ farmData, onUpdate, userId }) => {
     try {
       const updatedData = {
         ...formData,
-        crops: formData.crops.split(',').map(crop => crop.trim()),
+        crops: formData.crops.split(',').map((crop) => crop.trim()),
       };
 
       let response;
@@ -49,11 +49,13 @@ const FarmDetailsForm = ({ farmData, onUpdate, userId }) => {
   };
 
   return (
-    <div className="farm-details-form">
+    <div className={styles.farmDetailsForm}>
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Farm Name</label>
-          <input 
+        <div className={styles.formGroup}>
+          <label>
+            <FiHome /> Farm Name
+          </label>
+          <input
             type="text"
             name="name"
             value={formData.name}
@@ -61,9 +63,12 @@ const FarmDetailsForm = ({ farmData, onUpdate, userId }) => {
             required
           />
         </div>
-        <div className="form-group">
-          <label>Location</label>
-          <input 
+
+        <div className={styles.formGroup}>
+          <label>
+            <FiMapPin /> Location
+          </label>
+          <input
             type="text"
             name="location"
             value={formData.location}
@@ -71,9 +76,12 @@ const FarmDetailsForm = ({ farmData, onUpdate, userId }) => {
             required
           />
         </div>
-        <div className="form-group">
-          <label>Size (in acres)</label>
-          <input 
+
+        <div className={styles.formGroup}>
+          <label>
+            <FiMaximize /> Size (acres)
+          </label>
+          <input
             type="number"
             name="size"
             value={formData.size}
@@ -81,9 +89,12 @@ const FarmDetailsForm = ({ farmData, onUpdate, userId }) => {
             required
           />
         </div>
-        <div className="form-group">
-          <label>Crops Planted (comma separated)</label>
-          <input 
+
+        <div className={styles.formGroup}>
+          <label>
+            <FiCrop /> Crops
+          </label>
+          <input
             type="text"
             name="crops"
             value={formData.crops}
@@ -91,9 +102,12 @@ const FarmDetailsForm = ({ farmData, onUpdate, userId }) => {
             required
           />
         </div>
-        <div className="form-group">
-          <label>Farm Type</label>
-          <select 
+
+        <div className={styles.formGroup}>
+          <label>
+            <FiBookmark /> Farm Type
+          </label>
+          <select
             name="farmType"
             value={formData.farmType}
             onChange={handleChange}
@@ -107,8 +121,11 @@ const FarmDetailsForm = ({ farmData, onUpdate, userId }) => {
             ))}
           </select>
         </div>
-        <div className="form-group full-width">
-          <label>Description</label>
+
+        <div className={`${styles.formGroup} ${styles.fullWidth}`}>
+          <label>
+            <FiInfo /> Description
+          </label>
           <textarea
             name="description"
             value={formData.description}
@@ -116,9 +133,21 @@ const FarmDetailsForm = ({ farmData, onUpdate, userId }) => {
             required
           ></textarea>
         </div>
-        {error && <p className="error-message">{error}</p>}
-        <button type="submit" disabled={isSubmitting} className="btn btn-primary">
-          {isSubmitting ? <LoadingSpinner /> : (farmData && farmData._id ? 'Update Farm Details' : 'Create Farm Details')}
+
+        {error && <p className={styles.errorMessage}>{error}</p>}
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className={styles.submitBtn}
+        >
+          {isSubmitting ? (
+            <LoadingSpinner />
+          ) : farmData && farmData._id ? (
+            'Update Farm Details'
+          ) : (
+            'Create Farm Details'
+          )}
         </button>
       </form>
     </div>

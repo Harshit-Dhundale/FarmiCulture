@@ -4,7 +4,9 @@ import Slider from "react-slick";
 import FarmCard from './FarmCard';
 import FarmModal from './FarmModal';
 import { farmAPI } from '../../utils/api';
-import './FarmList.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTractor } from '@fortawesome/free-solid-svg-icons';
+import styles from './FarmList.module.css';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -40,12 +42,14 @@ const FarmList = ({ farms, setFarms, userId }) => {
   };
 
   return (
-    <div className="farm-list card">
-      <h2>Your Farms</h2>
+    <div className={styles.farmList}>
+      <h2>
+        <FontAwesomeIcon icon={faTractor} className={styles.farmListIcon} /> My Farms
+      </h2>
       {farms.length > 0 ? (
         <Slider {...settings}>
           {farms.map(farm => (
-            <div key={farm._id} className="farm-slider-item">
+            <div key={farm._id} className={styles.farmSliderItem}>
               <FarmCard
                 farmData={farm}
                 onUpdate={(data) => {
@@ -55,7 +59,7 @@ const FarmList = ({ farms, setFarms, userId }) => {
                   setFarms(updatedFarms);
                 }}
                 onDelete={handleDeleteFarm}
-                onEdit={handleEdit}  // Pass the edit callback
+                onEdit={handleEdit}
               />
             </div>
           ))}
@@ -65,7 +69,7 @@ const FarmList = ({ farms, setFarms, userId }) => {
       )}
 
       <button 
-        className="btn btn-primary add-farm-button"
+        className={`${styles.btn} ${styles.addFarmButton}`}
         onClick={() => {
           setSelectedFarm(null);
           setModalOpen(true);

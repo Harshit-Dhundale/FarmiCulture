@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { forumAPI } from '../../utils/api';
-import CommentForm from '../../components/common/CommentForm';
-import './ForumPostCard.css';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  FiMessageCircle,
+  FiHeart,
+  FiEdit,
+  FiTrash2,
+  FiCornerDownRight,
+  FiClock,
+} from "react-icons/fi";
+import { forumAPI } from "../../utils/api";
+import CommentForm from "../../components/common/CommentForm";
+import "./ForumPostCard.css";
 
 const ForumPostCard = ({ post, currentUser, onDelete, onUpdate }) => {
   const [expanded, setExpanded] = useState(false);
@@ -12,7 +20,6 @@ const ForumPostCard = ({ post, currentUser, onDelete, onUpdate }) => {
   // Toggle inline expansion
   const toggleExpand = async () => {
     if (!expanded) {
-      // Optionally, refresh the post to get the latest replies
       try {
         const res = await forumAPI.getPost(post._id);
         onUpdate(res.data);
@@ -24,7 +31,7 @@ const ForumPostCard = ({ post, currentUser, onDelete, onUpdate }) => {
     setExpanded(!expanded);
   };
 
-  // Add a new reply (using the CommentForm)
+  // Add a new reply
   const addReply = async (text) => {
     try {
       await forumAPI.addReply(post._id, { text, createdBy: currentUser?._id });
@@ -36,7 +43,7 @@ const ForumPostCard = ({ post, currentUser, onDelete, onUpdate }) => {
     }
   };
 
-  // Handle deletion (only if user is the creator)
+  // Handle deletion (only if the user is the creator)
   const handleDelete = async () => {
     try {
       await forumAPI.deletePost(post._id);
@@ -47,36 +54,89 @@ const ForumPostCard = ({ post, currentUser, onDelete, onUpdate }) => {
   };
 
   return (
-    <div className="forum-post-card card">
-      <h3>{post.title}</h3>
-      <p className="post-content">
-        {expanded ? post.content : (post.content.length > 150 ? post.content.substring(0, 150) + '...' : post.content)}
-      </p>
-      <div className="post-meta">
-        <span>By {post.createdBy?.username || 'Anonymous'}</span>
-        <button onClick={toggleExpand} className="btn btn-link">
-          {expanded ? "Collapse Discussion" : "View Discussion"}
-        </button>
-        {expanded && (
-          <>
-            <button onClick={() => navigate(`/forum/${post._id}`)} className="btn btn-link">
-              Open in New Page
-            </button>
-            {currentUser && post.createdBy === currentUser._id && (
-              <button onClick={handleDelete} className="btn btn-danger">
-                Delete
-              </button>
+    <div className="forum-post-card">
+      <div className="post-header">
+        <div className="user-info">
+          <div className="user-avatar">
+            {post.createdBy?.profilePicture ||
+            (currentUser &&
+              post.createdBy?._id === currentUser._id &&
+              currentUser.profilePicture) ? (
+              <img
+                src={currentUser.profilePicture}
+                alt={`${post.createdBy.username}'s avatar`}
+              />
+            ) : post.createdBy?.profilePicture ? (
+              <img
+                src={post.createdBy.profilePicture}
+                alt={`${post.createdBy.username}'s avatar`}
+              />
+            ) : (
+              post.createdBy?.username?.[0]?.toUpperCase() || "A"
             )}
+          </div>
+          <div>
+            <h3>{post.title}</h3>
+            <div className="post-meta">
+              <span>
+                <FiClock /> {new Date(post.createdAt).toLocaleDateString()}
+              </span>
+              <span>{post.createdBy?.username || "Anonymous"}</span>
+            </div>
+          </div>
+        </div>
+        <div className="post-stats">
+          <div className="stat-item">
+            <FiMessageCircle /> {post.replies?.length || 0}
+          </div>
+          <div className="stat-item">
+            <FiHeart /> {post.likes || 0}
+          </div>
+        </div>
+      </div>
+
+      <p className="post-content">
+        {expanded
+          ? post.content
+          : post.content.substring(0, 150) +
+            (post.content.length > 150 ? "..." : "")}
+      </p>
+
+      <div className="post-actions">
+        <button onClick={toggleExpand} className="action-btn">
+          <FiCornerDownRight /> {expanded ? "Collapse" : "Expand"}
+        </button>
+        {/* New "View Post" button that always appears */}
+        <button
+          onClick={() => navigate(`/forum/${post._id}`)}
+          className="action-btn view-btn"
+        >
+          View Post
+        </button>
+        {expanded && currentUser?.id === post.createdBy && (
+          <>
+            <button onClick={handleDelete} className="action-btn danger">
+              <FiTrash2 /> Delete
+            </button>
+            <button
+              onClick={() => navigate(`/forum/${post._id}/edit`)}
+              className="action-btn"
+            >
+              <FiEdit /> Edit
+            </button>
           </>
         )}
       </div>
+
       {expanded && (
         <div className="replies-section">
           {replies.length > 0 ? (
-            replies.map(reply => (
+            replies.map((reply) => (
               <div key={reply._id} className="reply-card">
                 <p>{reply.text}</p>
-                <p className="reply-meta"><em>By {reply.createdBy?.username || 'Anonymous'}</em></p>
+                <p className="reply-meta">
+                  <em>By {reply.createdBy?.username || "Anonymous"}</em>
+                </p>
               </div>
             ))
           ) : (

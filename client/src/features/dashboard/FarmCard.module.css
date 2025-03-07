@@ -1,0 +1,135 @@
+/* FarmCard.module.css */
+:root {
+  --primary-green: #2e7d32;
+  --light-green: #e8f5e9;
+  --danger-red: #c62828;
+  --warning-orange: #ff9800;
+}
+
+.farmCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease;
+}
+
+.farmCard:hover {
+  transform: translateY(-5px);
+}
+
+.farmHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.farmIcon {
+  font-size: 1.8rem;
+  color: var(--primary-green);
+}
+
+.farmType {
+  margin-left: auto;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: var(--light-green);
+  color: var(--primary-green);
+}
+
+.organic { 
+  background: #e8f5e9; 
+  color: #2e7d32; 
+}
+
+.conventional { 
+  background: #fff3e0; 
+  color: #ef6c00; 
+}
+
+.mixed { 
+  background: #e3f2fd; 
+  color: #1565c0; 
+}
+
+.farmDetailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.detailItem {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.detailItem svg {
+  flex-shrink: 0;
+  font-size: 1.5rem;
+  margin-top: 0.3rem;
+  color: var(--primary-green);
+}
+
+.detailItem label {
+  display: block;
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.3rem;
+}
+
+.cropsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cropTag {
+  background: var(--light-green);
+  color: var(--primary-green);
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+}
+
+.farmActions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.btnEdit, .btnDelete {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btnEdit {
+  background: var(--light-green);
+  color: var(--primary-green);
+}
+
+.btnDelete {
+  background: #ffebee;
+  color: var(--danger-red);
+}
+
+.btnEdit:hover {
+  background: #c8e6c9;
+}
+
+.btnDelete:hover {
+  background: #ffcdd2;
+}

@@ -47,7 +47,9 @@ const diseaseRoutes = require('./routes/disease');
 const farmsRoutes = require('./routes/farms');
 const postsRoutes = require('./routes/posts');
 const contactRoutes = require('./routes/contact');
-app.use('/api/contact', contactRoutes);
+const productsRoute = require('./routes/products');
+const ordersRoute = require('./routes/orders');
+const uploadRoutes = require('./routes/upload');
 
 // Use Routes
 app.use('/api/users', userRoutes);
@@ -59,7 +61,9 @@ app.use('/api/posts', postsRoutes);
 app.use('/api/farms', farmsRoutes);
 app.use('/uploads', express.static('uploads'));
 app.use('/api/contact', contactRoutes);
-
+app.use('/api/products', productsRoute);
+app.use('/api/orders', ordersRoute);
+app.use('/api/upload', uploadRoutes);
 
 // API Endpoints for Interacting with Python Services
 app.post('/api/predict_crop', async (req, res) => {
@@ -116,9 +120,12 @@ app.post('/api/predict_disease', upload.single('file'), async (req, res) => {
 
 // Centralized Error Handling Middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Something went wrong!' });
-});
+    console.error('Global error:', err);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: err.message
+    });
+  });
 
 // Start Server
 const PORT = process.env.PORT || 5000;

@@ -1,0 +1,123 @@
+:root {
+  /* Adjust or remove these if your global :root styles are defined elsewhere */
+  --primary-green: #2e7d32;
+  --danger-red: #c62828;
+}
+
+/* Container for the entire form */
+.farmDetailsForm {
+  padding: none;
+  /* You can add padding or styling here if desired */
+}
+
+/* Grid Layout for the form */
+.farmDetailsForm form {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  align-items: start !important;
+}
+
+/* Full-width form group (for the description textarea) */
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+/* Generic form group styling */
+.formGroup {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  margin-bottom: 10px !important;
+}
+
+/* Optional class for editing, if needed */
+.btnEdit {
+  margin-top: auto !important;
+}
+
+/* Label Styling */
+.formGroup label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  font-weight: 500 !important;
+  color: var(--primary-green) !important;
+  font-size: 0.95rem !important;
+}
+
+/* Inputs, selects, and textareas */
+.formGroup input,
+.formGroup select,
+.formGroup textarea {
+  border: 2px solid #eee !important;
+  border-radius: 10px !important;
+  padding: 10px !important;
+  font-size: 0.95rem !important;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+/* Focus Effect */
+.formGroup input:focus,
+.formGroup select:focus,
+.formGroup textarea:focus {
+  border-color: var(--primary-green) !important;
+  outline: none !important;
+  box-shadow: 0 0 5px rgba(46, 125, 50, 0.2) !important;
+}
+
+/* Improved Error Message */
+.errorMessage {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  color: var(--danger-red) !important;
+  padding: 10px !important;
+  background: #ffebee !important;
+  border-radius: 10px !important;
+  font-weight: 500 !important;
+  margin: 12px 0 !important;
+}
+
+/* Description Field */
+.farmDetailsForm textarea {
+  min-height: 80px !important;
+  resize: vertical !important;
+}
+
+/* Submit Button Styling */
+.submitBtn {
+  position: sticky !important;
+  bottom: 10px !important;
+  left: 0 !important;
+  width: 100% !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  border: none !important;
+  background-color: #4CAF50 !important;
+  color: white !important;
+  transition: background-color 0.2s ease, transform 0.1s ease !important;
+}
+
+/* Button Hover & Active */
+.submitBtn:hover {
+  background-color: #45a049 !important;
+}
+
+.submitBtn:active {
+  transform: scale(0.98) !important;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .farmDetailsForm form {
+    grid-template-columns: 1fr !important;
+  }
+
+  .submitBtn {
+    position: static !important;
+    margin-top: 15px !important;
+  }
+}

@@ -1,0 +1,88 @@
+.farmList {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: box-shadow 0.3s ease;
+  overflow: hidden;
+}
+
+.farmList:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.farmList h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.farmListIcon {
+  margin-right: 0.5rem;
+  color: #4CAF50;
+}
+
+.farmList p {
+  color: #666;
+  font-size: 1rem;
+}
+
+.btn {
+  margin-top: 1rem;
+  background-color: #4CAF50;
+  border: none;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn:hover {
+  background-color: #45a049;
+}
+
+.addFarmButton {
+  position: relative;
+  top: 10px;
+}
+
+.slickDots {
+  bottom: -15px;
+}
+
+.slickPrev:before, 
+.slickNext:before {
+  color: #4CAF50;
+  font-size: 20px;
+}
+
+.sliderContainer {
+  width: 100%;
+  overflow: hidden;
+}
+
+.slickSlider {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.farmSliderItem {
+  padding: 0 10px;
+  max-width: 100%;
+}
+
+.slickSlide > div {
+  padding: 0 10px;
+}
+
+.slickList {
+  margin: 0 -10px;
+}
+
+.farmCard {
+  width: 100% !important;
+  max-width: 600px;
+  margin: 0 auto;
+}

@@ -1,59 +1,81 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { FiArrowLeft, FiCheckCircle, FiDroplet, FiSun, FiShield } from "react-icons/fi";
+import HeroHeader from "../../components/common/HeroHeader";
+import "./FertilizerResult.css"; // Renamed CSS file
 
 const FertilizerResult = () => {
   const location = useLocation();
-  const navigate = useNavigate(); // Using useNavigate for navigation
+  const navigate = useNavigate();
   const { result } = location.state || { result: "No Result" };
 
-  // ✅ Construct image URL dynamically (Assuming images are in `public/assets/crops/`)
-  const imageUrl = `${
-    process.env.PUBLIC_URL
-  }/assets/fertilizers/${result.toLowerCase()}.jpg`;
+  const imageUrl = `${process.env.PUBLIC_URL}/assets/fertilizers/${result.toLowerCase()}.jpg`;
 
   return (
-    <div className="container pt-5">
-      <h3
-        style={{
-          margin: "auto",
-          width: "80%",
-          textAlign: "center",
-          marginTop: "20px",
-          textTransform: "uppercase",
-        }}
-      >
-        Results Of Prediction
-      </h3>
-      <div style={{ width: "90%", margin: "auto", textAlign: "center" }}>
-        <h3 style={{ marginTop: "40px" }}>
-          <b>
-            Fertilizer Prediction:{" "}
-            <span style={{ color: "green" }}>{result}</span>
-          </b>
-        </h3>
+    <>
+      <HeroHeader
+        title="Optimal Fertilizer Found!"
+        subtitle="AI-powered recommendation for maximum yield"
+        backgroundImage="/assets/head/fert.jpg"
+      />
 
-        {/* ✅ Display the crop image */}
-        <div style={{ marginTop: "20px" }}>
-          <img
-            src={imageUrl}
-            alt={result}
-            style={{ maxWidth: "300px", width: "100%", height: "auto" }}
-            onError={(e) => {
-              e.target.style.display = "none";
-            }} // Hide image if not found
-          />
-        </div>
+      <div className="result-container">
+        <div className="result-card">
+          <div className="image-container">
+            <img
+              src={imageUrl}
+              alt="Fertilizer preview"
+              className="diagnosis-image"
+              onError={(e) => {
+                e.target.src = `${process.env.PUBLIC_URL}/assets/fertilizers/placeholder.jpg`;
+              }}
+            />
+            <div className="image-overlay">
+              <span className="crop-name">{result}</span>
+            </div>
+          </div>
 
-        <div className="prediction text-center">
-          <button
-            onClick={() => navigate(-1)} // Navigates back to the previous page
-            className="btn btn-primary"
-          >
-            New Prediction
-          </button>
+          <div className="result-content">
+            <div className="diagnosis-card">
+              <h3 className="diagnosis-title">Fertilizer Recommendation</h3>
+              <div className="disease-name">
+                {result}
+                <div className="severity-indicator success">Highly Effective</div>
+              </div>
+            </div>
+
+            <div className="recommendations-card">
+              <h4 className="recommendations-title">Why {result}?</h4>
+              <ul className="recommendations-list">
+                <li>
+                  <FiCheckCircle className="recommendation-icon" />
+                  <span>Optimal N-P-K ratio for your soil condition</span>
+                </li>
+                <li>
+                  <FiDroplet className="recommendation-icon" />
+                  <span>Improves water retention and nutrient absorption</span>
+                </li>
+                <li>
+                  <FiSun className="recommendation-icon" />
+                  <span>Enhances crop growth and yield</span>
+                </li>
+                <li>
+                  <FiShield className="recommendation-icon" />
+                  <span>Safe for the environment and sustainable farming</span>
+                </li>
+              </ul>
+            </div>
+
+            <button
+              onClick={() => navigate(-1)}
+              className="primary-button"
+            >
+              <FiArrowLeft /> New Soil Analysis
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

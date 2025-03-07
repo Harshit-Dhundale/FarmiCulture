@@ -2,76 +2,117 @@
 import React from 'react';
 import Slider from "react-slick";
 import { useNavigate } from 'react-router-dom';
-import './PredictionsList.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faPlus, 
+  faSeedling, 
+  faPills, 
+  faBug, 
+  faChevronLeft, 
+  faChevronRight,
+  faChartLine 
+} from '@fortawesome/free-solid-svg-icons';
+import styles from './PredictionsList.module.css';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+
+const NextArrow = ({ onClick }) => (
+  <button className={styles.slickArrow + " " + styles.next} onClick={onClick}>
+    <FontAwesomeIcon icon={faChevronRight} />
+  </button>
+);
+
+const PrevArrow = ({ onClick }) => (
+  <button className={styles.slickArrow + " " + styles.prev} onClick={onClick}>
+    <FontAwesomeIcon icon={faChevronLeft} />
+  </button>
+);
 
 const PredictionsList = ({ predictions }) => {
   const navigate = useNavigate();
 
-  // Group predictions by type (Crop, Fertilizer, Disease)
   const grouped = predictions.reduce((acc, pred) => {
     const type = pred.type;
-    if (!acc[type]) {
-      acc[type] = [];
-    }
+    if (!acc[type]) acc[type] = [];
     acc[type].push(pred);
     return acc;
   }, {});
 
-  // Render a grid of images with captions for a given type
-  const renderImageGrid = (type) => {
-    const group = grouped[type];
-    if (!group || group.length === 0) return <p>No predictions</p>;
+  const handleAddPrediction = (type) => {
+    const routes = {
+      Crop: '/crop-recommendation',
+      Fertilizer: '/fertilizer-recommendation',
+      Disease: '/disease-detection'
+    };
+    navigate(routes[type]);
+  };
 
-    // Deduplicate: for Disease use imageUrl; for Crop and Fertilizer use recommendation
-    let uniquePredictions = [];
-    if (type === 'Disease') {
-      uniquePredictions = Array.from(new Map(group.map(pred => [pred.imageUrl, pred])).values());
-    } else {
-      uniquePredictions = Array.from(new Map(group.map(pred => [pred.recommendation, pred])).values());
-    }
+  const renderTypeGrid = (type) => {
+    const group = grouped[type] || [];
+    const icons = { Crop: faSeedling, Fertilizer: faPills, Disease: faBug };
+    
+    let uniquePredictions = type === 'Disease' 
+      ? Array.from(new Map(group.map(pred => [pred.imageUrl, pred])).values())
+      : Array.from(new Map(group.map(pred => [pred.recommendation, pred])).values());
 
     return (
-      <div className="prediction-grid">
-        {uniquePredictions.map((pred, index) => {
-          let imgSrc = "";
-          let label = "";
-          if (type === 'Disease') {
-            imgSrc = "/" + pred.imageUrl.replace(/\\/g, "/");
-            label = `${pred.crop.charAt(0).toUpperCase() + pred.crop.slice(1)} - ${pred.prediction}`;
+      <div className={styles.predictionCard}>
+        <div className={styles.cardHeader}>
+          <FontAwesomeIcon icon={icons[type]} className={styles.typeIcon} />
+          <h3>{type} Predictions</h3>
+        </div>
+        
+        <div className={styles.predictionGrid}>
+          {uniquePredictions.map((pred, index) => {
+            let imgSrc = '';
+            let label = '';
+            
+            if (type === 'Disease') {
+              imgSrc = `/${pred.imageUrl.replace(/\\/g, "/")}`;
+              label = `${pred.crop.charAt(0).toUpperCase() + pred.crop.slice(1)} - ${pred.prediction}`;
+            } else {
+              const rec = pred.recommendation.toLowerCase().replace(/\s+/g, '-');
+              imgSrc = `/assets/${type.toLowerCase()}s/${rec}.jpg`;
+              label = pred.recommendation;
+            }
 
-          } else if (type === 'Crop') {
-            const rec = pred.recommendation.toLowerCase().replace(/\s+/g, '-');
-            imgSrc = `/assets/crops/${rec}.jpg`;
-            label = pred.recommendation;
-          } else if (type === 'Fertilizer') {
-            const rec = pred.recommendation.toLowerCase().replace(/\s+/g, '-');
-            imgSrc = `/assets/fertilizers/${rec}.jpg`;
-            label = pred.recommendation;
-          }
-          return (
-            <div key={index} className="grid-item">
-              <img src={imgSrc} alt={`${type} prediction`} />
-              <div className="image-label">{label}</div>
+            return (
+              <div key={index} className={styles.gridItem}>
+                <div className={styles.imageContainer}>
+                  <img
+                    src={imgSrc}
+                    alt={label}
+                    loading="lazy"
+                    onError={(e) => e.target.src = '/assets/placeholder.jpg'}
+                  />
+                  <div className={styles.imageLabel}>
+                    {type === 'Disease' && <FontAwesomeIcon icon={faBug} className={styles.labelIcon} />}
+                    <span>{label}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          
+          {uniquePredictions.length === 0 && (
+            <div className={styles.emptyState}>
+              <FontAwesomeIcon icon={icons[type]} className={styles.emptyIcon} />
+              <p>No {type.toLowerCase()} predictions found</p>
             </div>
-          );
-        })}
+          )}
+        </div>
+
+        <button 
+          className={styles.predictionButton}
+          onClick={() => handleAddPrediction(type)}
+        >
+          <FontAwesomeIcon icon={faPlus} />
+          {type === 'Disease' ? ' New Detection' : ' New Prediction'}
+        </button>
       </div>
     );
   };
 
-  const handleAddPrediction = (type) => {
-    if (type === 'Crop') {
-      navigate('/crop-recommendation');
-    } else if (type === 'Fertilizer') {
-      navigate('/fertilizer-recommendation');
-    } else if (type === 'Disease') {
-      navigate('/disease-detection');
-    }
-  };
-
-  // Slider settings for the carousel display
   const sliderSettings = {
     dots: true,
     infinite: true,
@@ -79,26 +120,21 @@ const PredictionsList = ({ predictions }) => {
     slidesToShow: 1,
     slidesToScroll: 1,
     autoplay: true,
-    autoplaySpeed: 3000,
-    arrows: true,
+    autoplaySpeed: 5000,
+    nextArrow: <NextArrow />,
+    prevArrow: <PrevArrow />,
+    appendDots: dots => <ul className={styles.customDots}>{dots}</ul>
   };
 
   return (
-    <div className="predictions-carousel card">
-      <h2>Your Predictions</h2>
+    <div className={styles.predictionsCarousel + " card"}>
+      <div className={styles.sectionHeader}>
+        <h2><FontAwesomeIcon icon={faChartLine} /> Prediction History</h2>
+      </div>
       <Slider {...sliderSettings}>
         {['Crop', 'Fertilizer', 'Disease'].map((type) => (
-          <div key={type} className="prediction-card">
-            <h3>{type} Predictions:</h3>
-            <div className="prediction-content">
-              {renderImageGrid(type)}
-            </div>
-            <button 
-              className="prediction-button" 
-              onClick={() => handleAddPrediction(type)}
-            >
-              {type === 'Disease' ? 'Add Disease Detection' : `Add ${type} Prediction`}
-            </button>
+          <div key={type}>
+            {renderTypeGrid(type)}
           </div>
         ))}
       </Slider>

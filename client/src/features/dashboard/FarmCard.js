@@ -1,23 +1,65 @@
-// client/src/features/dashboard/FarmCard.js
+// FarmCard.js
 import React from 'react';
-import './FarmCard.css';
+import { FiEdit, FiTrash, FiMapPin, FiCrop, FiLayout, FiInfo, FiHome } from 'react-icons/fi';
+import styles from './FarmCard.module.css';
 
 const FarmCard = ({ farmData, onUpdate, onDelete, onEdit }) => {
   return (
-    <div className="farm-card card">
-      <div className="farm-display">
-        <h2>{farmData.name || "Unnamed Farm"}</h2>
-        <p><strong>Location:</strong> {farmData.location}</p>
-        <p><strong>Size:</strong> {farmData.size} acres</p>
-        <p><strong>Crops:</strong> {farmData.crops.join(', ')}</p>
-        <p><strong>Farm Type:</strong> {farmData.farmType}</p>
-        <p><strong>Description:</strong> {farmData.description}</p>
+    <div className={styles.farmCard}>
+      <div className={styles.farmHeader}>
+        <FiHome className={styles.farmIcon} />
+        <h3>{farmData.name || "Unnamed Farm"}</h3>
+        <span className={`${styles.farmType} ${styles[farmData.farmType.toLowerCase()]}`}>
+          {farmData.farmType}
+        </span>
+      </div>
+      
+      <div className={styles.farmDetailsGrid}>
+        <div className={styles.detailItem}>
+          <FiMapPin />
+          <div>
+            <label>Location</label>
+            <p>{farmData.location}</p>
+          </div>
+        </div>
         
-        <button className="btn btn-secondary" onClick={() => onEdit(farmData)}>
-          Edit Farm Details
+        <div className={styles.detailItem}>
+          <FiLayout />
+          <div>
+            <label>Size</label>
+            <p>{farmData.size} acres</p>
+          </div>
+        </div>
+
+        <div className={styles.detailItem}>
+          <FiCrop />
+          <div>
+            <label>Crops</label>
+            <div className={styles.cropsList}>
+              {farmData.crops.map((crop, index) => (
+                <span key={index} className={styles.cropTag}>{crop}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {farmData.description && (
+          <div className={styles.detailItem}>
+            <FiInfo />
+            <div>
+              <label>Description</label>
+              <p className={styles.farmDescription}>{farmData.description}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className={styles.farmActions}>
+        <button onClick={() => onEdit(farmData)} className={styles.btnEdit}>
+          <FiEdit /> Edit
         </button>
-        <button className="btn btn-danger" onClick={() => onDelete(farmData._id)}>
-          Delete Farm
+        <button onClick={() => onDelete(farmData._id)} className={styles.btnDelete}>
+          <FiTrash /> Delete
         </button>
       </div>
     </div>

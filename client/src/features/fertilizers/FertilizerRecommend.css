@@ -1,58 +1,222 @@
-.recommendation-container {
-  padding-top: 80px; /* Adjust based on your navbar height */
-  min-height: 100vh;
+:root {
+  --primary-green: #2ecc71;
+  --dark-green: #27ae60;
+  --light-green: #f0fdf4;
+  --input-bg: #e8f5e9;
+  --text-dark: #2c3e50;
+  --card-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Container */
+.fertilizer-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+/* Form Sections */
+.form-sections {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  background-color: #f5f5f5;
-  padding: 20px;
+  gap: 2.5rem; /* Reduced gap */
 }
 
-.recommendation-form {
-  width: 100%;
-  max-width: 800px;
+.form-section {
   background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 2rem; /* Reduced from 2.5rem */
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  transition: transform 0.3s ease;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e0f2e1;
 }
 
-.form-grid {
+.form-section:hover {
+  transform: translateY(-3px);
+}
+
+/* Section Title */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text-dark);
+  margin-bottom: 1.5rem; /* Reduced from 2rem */
+  font-size: 1.3rem;
+  padding-bottom: 0.8rem; /* Slightly reduced */
+  border-bottom: 2px solid var(--light-green);
+}
+
+.section-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--dark-green);
+}
+
+/* Input Grid */
+.input-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 15px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem; /* Reduced from 2rem */
 }
 
-.form-group {
-  margin-bottom: 15px;
+/* Common Input Styles */
+.input-group {
+  position: relative;
+  margin-bottom: 1.2rem; /* Reduced from 1.5rem */
 }
 
-.form-group label {
+.input-group label {
   display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
+  margin-bottom: 0.6rem; /* Reduced margin */
+  color: #4a4a4a;
+  font-weight: 600;
+  font-size: 0.95rem;
 }
 
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+/* Input Wrapper */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--input-bg);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
 }
 
-button {
+.input-wrapper:hover {
+  box-shadow: 0 2px 12px rgba(46, 204, 113, 0.1);
+}
+
+.input-wrapper:focus-within {
+  border-color: var(--primary-green);
+}
+
+/* Input Fields */
+.input-wrapper input {
   width: 100%;
-  padding: 10px;
-  background-color: #4CAF50;
+  padding: 0.9rem 1.2rem 0.9rem 3rem; /* Adjusted padding */
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  color: var(--text-dark);
+  font-weight: 500;
+}
+
+/* Icons in Input Fields */
+.input-wrapper svg {
+  position: absolute;
+  left: 1rem;
+  color: var(--dark-green);
+  width: 20px;
+  height: 20px;
+}
+
+/* Remove nutrient-specific styles and keep only these */
+.nutrient-indicator {
+  position: absolute;
+  left: 1rem;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 2;
+}
+
+/* Select Inputs */
+.select-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem; /* Reduced from 2rem */
+}
+
+.custom-select {
+  position: relative;
+  background: var(--input-bg);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.custom-select:hover {
+  box-shadow: 0 2px 12px rgba(46, 204, 113, 0.1);
+}
+
+.custom-select select {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  appearance: none;
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  color: var(--text-dark);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.select-arrow {
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--dark-green);
+  width: 20px;
+  height: 20px;
+}
+
+/* Recommendation Button */
+.recommendation-button {
+  width: 100%;
+  padding: 1.25rem; /* Reduced from 1.5rem */
+  /* background: linear-gradient(135deg, var(--primary-green), var(--dark-green)); */
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
   cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1.5rem; /* Reduced */
 }
 
-button:disabled {
-  background-color: #ccc;
-  cursor: not-all-allowed;
+.recommendation-button:hover {
+  opacity: 0.95;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+
+/* Error Message */
+.error-message {
+  margin: 1.5rem 0; /* Reduced from 2rem */
+  padding: 1rem; /* Adjusted padding */
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .form-section {
+    padding: 1.5rem; /* Adjusted for smaller screens */
+    margin-bottom: 1rem;
+  }
+
+  .input-grid,
+  .select-grid {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+
+  .input-wrapper input {
+    padding: 0.8rem 1rem 0.8rem 2.8rem; /* Adjusted padding */
+  }
 }

@@ -1,20 +1,30 @@
-// client/src/features/dashboard/Dashboard.js
+// client/src/features/dashboard/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { userAPI, farmAPI, cropAPI, fertilizerAPI, diseaseAPI, forumAPI } from '../../utils/api';
+import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faTractor, 
+  faChartLine, 
+  faShoppingCart, 
+  faSeedling
+} from '@fortawesome/free-solid-svg-icons';
 import FarmList from './FarmList';
 import PredictionsList from './PredictionsList';
 import ForumPostsList from './ForumPostsList';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import HeroHeader from '../../components/common/HeroHeader';
-import './Dashboard.css';
+import OrdersSummary from './OrdersSummary';
+import styles from './Dashboard.module.css';
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
   const [userData, setUserData] = useState(null);
-  const [farms, setFarms] = useState([]); // Array of farms now
+  const [farms, setFarms] = useState([]);
   const [predictions, setPredictions] = useState([]);
   const [forumPosts, setForumPosts] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -64,44 +74,88 @@ const Dashboard = () => {
       }
     };
 
+    const loadOrders = async () => {
+      try {
+        const { data } = await axios.get(`/api/orders/user/${currentUser._id}`);
+        setOrders(data);
+      } catch (err) {
+        console.error("Error fetching orders:", err);
+      }
+    };
+
     if (currentUser) {
       Promise.all([
         loadUserData(),
         loadFarms(),
         loadPredictions(),
         loadForumPosts(),
+        loadOrders(),
       ]).finally(() => setLoading(false));
     }
   }, [currentUser]);
 
   if (loading) return <LoadingSpinner />;
-  if (error) return <p className="dashboard-error">{error}</p>;
+  if (error) return <p className={styles.dashboardError}>{error}</p>;
+
+  const totalOrders = orders.length;
+  const deliveredOrders = orders.filter(
+    (order) =>
+      order.deliveryStatus &&
+      order.deliveryStatus.toLowerCase() === 'delivered'
+  ).length;
+  const pendingOrders = totalOrders - deliveredOrders;
 
   return (
     <>
       <HeroHeader
-        title="Your Dashboard"
-        subtitle="Manage your farms, view predictions, and stay updated in one place."
+        title={
+          <>
+            <FontAwesomeIcon icon={faSeedling} /> Welcome, {userData.username || userData.fullName}!
+          </>
+        }
+        subtitle="Your Agricultural Management Hub"
         backgroundImage="/assets/head/dash.jpg"
       />
-      <div className="dashboard-container">
-        <h1>Welcome, {userData.username || userData.fullName}!</h1>
-        <p className="dashboard-welcome">
-          We’re glad to have you here. Explore our features and add your data to get the most out of our platform!
-        </p>
-        
-        {/* Two-column grid for Farms and Predictions */}
-        <div className="dashboard-top-grid">
-          <div className="dashboard-section">
+      
+      <div className={styles.dashboardContainer}>
+        <div className={styles.dashboardStatsRow}>
+          <div className={styles.statCard}>
+            <FontAwesomeIcon icon={faTractor} className={styles.statIcon} />
+            <div className={styles.statContent}>
+              <h3>{farms.length}</h3>
+              <p>Active Farms</p>
+            </div>
+          </div>
+          <div className={styles.statCard}>
+            <FontAwesomeIcon icon={faChartLine} className={styles.statIcon} />
+            <div className={styles.statContent}>
+              <h3>{predictions.length}</h3>
+              <p>Total Predictions</p>
+            </div>
+          </div>
+          <div className={styles.statCard}>
+            <FontAwesomeIcon icon={faShoppingCart} className={styles.statIcon} />
+            <div className={styles.statContent}>
+              <h3>{pendingOrders}</h3>
+              <p>Pending Orders</p>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.dashboardTopGrid}>
+          <div className={styles.dashboardSection}>
             <FarmList farms={farms} setFarms={setFarms} userId={currentUser._id} />
           </div>
-          <div className="dashboard-section">
+          <div className={styles.dashboardSection}>
             <PredictionsList predictions={predictions} />
           </div>
         </div>
 
-        {/* Forum Posts Section – full width */}
-        <div className="dashboard-section">
+        <div className={styles.dashboardSection}>
+          <OrdersSummary />
+        </div>
+
+        <div className={styles.dashboardSection}>
           <ForumPostsList forumPosts={forumPosts} />
         </div>
       </div>

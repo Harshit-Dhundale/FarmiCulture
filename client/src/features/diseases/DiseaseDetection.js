@@ -1,11 +1,11 @@
-// client/src/features/diseases/DiseaseDetection.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { diseaseAPI } from '../../utils/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { FormLayout } from '../../components/common/FormLayout';
-import HeroHeader from '../../components/common/HeroHeader'; // Import HeroHeader
-import './DiseaseDetection.css';  // Ensure you have styles for the component
+import HeroHeader from '../../components/common/HeroHeader';
+import { FiCrop, FiUpload, FiAlertTriangle, FiChevronDown, FiSearch } from 'react-icons/fi';
+import './DiseaseDetection.css';
 
 const DiseaseDetection = () => {
   const [formData, setFormData] = useState({
@@ -18,10 +18,11 @@ const DiseaseDetection = () => {
   const navigate = useNavigate();
 
   const crop_list = [
-    'strawberry', 'potato', 'corn', 'apple', 
+    'strawberry', 'potato', 'corn', 'apple',
     'cherry', 'grape', 'peach', 'pepper', 'tomato'
   ];
 
+  // Handle image selection and preview
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -32,18 +33,22 @@ const DiseaseDetection = () => {
     }
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
+    
     try {
       const formPayload = new FormData();
       formPayload.append('crop', formData.crop);
       formPayload.append('file', formData.file);
-  
-      // Call the new Node endpoint to both predict and store the disease record
+
+      // Call API
       const response = await diseaseAPI.create(formPayload);
-      console.log("API Response (Node):", response.data);
+      console.log("API Response:", response.data);
       
+      // Navigate to result page
       navigate('/disease-result', {
         state: {
           prediction: response.data.prediction,
@@ -51,8 +56,8 @@ const DiseaseDetection = () => {
         },
       });
     } catch (error) {
-      console.error("Error in disease detection submit:", error);
-      setError(error.response?.error || 'Prediction failed');
+      console.error("Error in disease detection:", error);
+      setError(error.response?.data?.error || 'Prediction failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -60,56 +65,79 @@ const DiseaseDetection = () => {
 
   return (
     <>
-      {/* HeroHeader with background image */}
+      {/* Hero Header */}
       <HeroHeader
-        title="Crop Disease Detection"
-        subtitle="Upload leaf images to detect plant diseases early."
-        backgroundImage="/assets/head/dis.jpg"  // Path to image in public folder
+        title="Crop Health Guardian"
+        subtitle="Early disease detection for healthier crops"
+        backgroundImage="/assets/head/dis.jpg"
       />
 
-      <div className="page-container">
-        <FormLayout 
-          title="Crop Disease Detection" 
-          description="Upload an image of your crop leaves for analysis"
-        >
-          <form onSubmit={handleSubmit} className="styled-form">
-            <div className="form-group">
-              <label>Select Crop Type</label>
-              <select
-                value={formData.crop}
-                onChange={(e) => setFormData({ ...formData, crop: e.target.value })}
-                required
-              >
-                <option value="">Select a crop</option>
-                {crop_list.map((crop, index) => (
-                  <option key={index} value={crop}>
-                    {crop.charAt(0).toUpperCase() + crop.slice(1)}
-                  </option>
-                ))}
-              </select>
+      <div className="disease-container">
+        <FormLayout>
+          <form onSubmit={handleSubmit} className="disease-form">
+            
+            {/* Select Crop Type */}
+            <div className="form-section">
+              <h3 className="section-title"><FiCrop /> Select Crop Type</h3>
+              <div className="custom-select">
+                <select
+                  value={formData.crop}
+                  onChange={(e) => setFormData({ ...formData, crop: e.target.value })}
+                  required
+                >
+                  <option value="">Choose crop type</option>
+                  {crop_list.map((crop) => (
+                    <option key={crop} value={crop}>
+                      {crop.charAt(0).toUpperCase() + crop.slice(1)}
+                    </option>
+                  ))}
+                </select>
+                <FiChevronDown className="select-arrow" />
+              </div>
             </div>
 
-            <div className="form-group">
-              <label>Upload Leaf Image</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                required
-              />
+            {/* Upload Leaf Image */}
+            <div className="form-section">
+              <h3 className="section-title"><FiUpload /> Upload Leaf Image</h3>
+              <label className="file-upload">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  required
+                />
+                <div className="upload-content">
+                  {preview ? (
+                    <img src={preview} alt="Upload preview" />
+                  ) : (
+                    <>
+                      <FiUpload className="upload-icon" />
+                      <p>Click to select leaf image</p>
+                    </>
+                  )}
+                </div>
+              </label>
             </div>
 
-            {preview && (
-              <div className="image-preview">
-                <img src={preview} alt="Upload preview" />
+            {/* Error Message */}
+            {error && (
+              <div className="error-message">
+                <FiAlertTriangle /> {error}
               </div>
             )}
 
-            {error && <div className="error-message">{error}</div>}
-
-            <button type="submit" className="primary-button" disabled={loading}>
-              {loading ? <LoadingSpinner /> : 'Analyze Image'}
+            {/* Submit Button */}
+            <button type="submit" className="analyze-button" disabled={loading}>
+              {loading ? (
+                <LoadingSpinner />
+              ) : (
+                <>
+                  <FiSearch />
+                  Analyze Image
+                </>
+              )}
             </button>
+
           </form>
         </FormLayout>
       </div>

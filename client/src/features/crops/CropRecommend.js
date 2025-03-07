@@ -1,11 +1,11 @@
-// client/src/features/crops/CropRecommend.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cropAPI } from '../../utils/api';
-import HeroHeader from '../../components/common/HeroHeader';  // Import HeroHeader
+import HeroHeader from '../../components/common/HeroHeader';
 import { FormLayout } from '../../components/common/FormLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import './CropRecommend.css'; // Ensure your styles are here
+import { FiInfo, FiDroplet, FiThermometer, FiSun, FiCloudRain } from 'react-icons/fi';
+import './CropRecommend.css';
 
 const CropRecommend = () => {
   const [inputs, setInputs] = useState({
@@ -17,6 +17,7 @@ const CropRecommend = () => {
     ph: '',
     rainfall: ''
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -42,32 +43,31 @@ const CropRecommend = () => {
       rainfall: parseFloat(inputs.rainfall)
     };
 
-    console.log('Numeric Payload:', numericPayload); // Debug
-
-    // Validate that all inputs are numbers
+    // Validate all fields
     if (Object.values(numericPayload).some(val => isNaN(val))) {
       setLoading(false);
       return setError('Please enter valid numbers in all fields');
     }
 
-    // Build the payload for the Python service
-    const payload = {
-      features: [
-        numericPayload.nitrogen,
-        numericPayload.phosphorus,
-        numericPayload.potassium,
-        numericPayload.temperature,
-        numericPayload.humidity,
-        numericPayload.ph,
-        numericPayload.rainfall
-      ]
-    };
-
     try {
+      // Structure payload according to backend requirements
+      const payload = {
+        features: [
+          numericPayload.nitrogen,
+          numericPayload.phosphorus,
+          numericPayload.potassium,
+          numericPayload.temperature,
+          numericPayload.humidity,
+          numericPayload.ph,
+          numericPayload.rainfall
+        ]
+      };
+
       const response = await cropAPI.predict(payload);
       const recommendation = response.data.prediction || response.data;
 
-      // Save crop data (including recommendation) to MongoDB
+      // IMPORTANT: match the old code's expected field names 
+      // (soilTemperature, soilHumidity, soilPh) if your backend uses those.
       await cropAPI.createCropData({
         nitrogen: numericPayload.nitrogen,
         phosphorus: numericPayload.phosphorus,
@@ -76,13 +76,20 @@ const CropRecommend = () => {
         soilHumidity: numericPayload.humidity,
         soilPh: numericPayload.ph,
         rainfall: numericPayload.rainfall,
-        recommendation  // Include the recommendation
+        recommendation
       });
 
-      navigate('/crop-result', { state: { result: recommendation } });
+      // Navigate with the recommendation
+      navigate('/crop-result', { 
+        state: { 
+          result: recommendation,
+          inputs: numericPayload
+        }
+      });
+
     } catch (err) {
-      console.error('Full error object:', err);
-      setError(err.response?.data?.message || err.message);
+      console.error('Prediction error:', err);
+      setError(err.response?.data?.message || 'Failed to get recommendations. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -90,54 +97,140 @@ const CropRecommend = () => {
 
   return (
     <>
-      {/* HeroHeader with background image */}
       <HeroHeader
-        title="Crop Recommendation"
-        subtitle="Enter soil parameters for optimal crop suggestions."
-        backgroundImage="/assets/head/crop.jpg"  // Path to image in public folder
+        title="Smart Crop Advisor"
+        subtitle="Get AI-powered crop suggestions based on your soil conditions"
+        backgroundImage="/assets/head/crop.jpg"
       />
 
-      <div className="page-container">
-        <FormLayout
-          title="Crop Recommendation"
-          description="Enter soil parameters for optimal crop suggestions"
-        >
-          <form onSubmit={handleSubmit} className="styled-form">
-            <div className="form-grid">
-              {[
-                { label: "Nitrogen (N) Content", key: "nitrogen" },
-                { label: "Phosphorus (P) Content", key: "phosphorus" },
-                { label: "Potassium (K) Content", key: "potassium" },
-                { label: "Temperature (°C)", key: "temperature" },
-                { label: "Humidity (%)", key: "humidity" },
-                { label: "pH Level", key: "ph" },
-                { label: "Rainfall (mm)", key: "rainfall" }
-              ].map(({ label, key }) => (
-                <div className="form-group" key={key}>
-                  <label>{label}</label>
+<div className="crop-recommend-container">
+  <FormLayout>
+    <form onSubmit={handleSubmit} className="crop-form">
+      <div className="form-sections">
+        {/* Soil Nutrients Section */}
+        <div className="form-section">
+          <h3 className="section-title">
+            <FiDroplet />
+            Soil Nutrients
+          </h3>
+          <div className="parameter-grid">
+            {[
+              {
+                label: "Nitrogen (N) ppm",
+                key: "nitrogen",
+                icon: <FiDroplet />,
+                info: "Measure of soil nitrogen content"
+              },
+              {
+                label: "Phosphorus (P) ppm",
+                key: "phosphorus",
+                icon: <FiDroplet />,
+                info: "Measure of soil phosphorus content"
+              },
+              {
+                label: "Potassium (K) ppm",
+                key: "potassium",
+                icon: <FiDroplet />,
+                info: "Measure of soil potassium content"
+              }
+            ].map(({ label, key, icon, info }) => (
+              <div className="input-group" key={key}>
+                <label>{label}</label>
+                <div className="input-wrapper">
+                  {icon}
                   <input
                     type="number"
                     name={key}
                     value={inputs[key]}
                     onChange={handleChange}
-                    placeholder={`Enter ${label}`}
+                    placeholder={label}
                     required
-                    tabIndex="0"
                   />
+                  {/* <div className="info-tooltip">
+                    <FiInfo />
+                    <span className="tooltip-text">{info}</span>
+                  </div> */}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-            <button type="submit" className="primary-button" disabled={loading}>
+        {/* Environmental Factors Section */}
+        <div className="form-section">
+          <h3 className="section-title">
+            <FiThermometer />
+            Environmental Factors
+          </h3>
+          <div className="parameter-grid">
+            {[
+              {
+                label: "Temperature (°C)",
+                key: "temperature",
+                icon: <FiThermometer />,
+                // info: "Average daily temperature"
+              },
+              {
+                label: "Humidity (%)",
+                key: "humidity",
+                icon: <FiCloudRain />,
+                // info: "Relative humidity percentage"
+              },
+              {
+                label: "pH Level",
+                key: "ph",
+                icon: <FiSun />,
+                // info: "Soil acidity/alkalinity (0-14 scale)"
+              },
+              {
+                label: "Rainfall (mm)",
+                key: "rainfall",
+                icon: <FiCloudRain />,
+                // info: "Annual rainfall measurement"
+              }
+            ].map(({ label, key, icon, info }) => (
+              <div className="input-group" key={key}>
+                <label>{label}</label>
+                <div className="input-wrapper">
+                  {icon}
+                  <input
+                    type="number"
+                    name={key}
+                    value={inputs[key]}
+                    onChange={handleChange}
+                    placeholder={label}
+                    required
+                    step={key === 'ph' ? '0.1' : '1'}
+                    min={key === 'ph' ? 0 : 0}
+                    max={key === 'ph' ? 14 : undefined}
+                  />
+                  {/* <div className="info-tooltip">
+                    <FiInfo />
+                    <span className="tooltip-text">{info}</span>
+                  </div> */}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+
+            <button type="submit" className="analyze-button" disabled={loading}>
               {loading ? (
                 <>
                   <LoadingSpinner />
-                  <span className="ms-2">Processing...</span>
+                  <span>Analyzing Soil Data...</span>
                 </>
-              ) : 'Get Recommendation'}
+              ) : (
+                <>
+                  <FiSun />
+                  <span>Generate Recommendation</span>
+                </>
+              )}
             </button>
 
-            {error && <div className="error-message">{error}</div>}
+            {error && <div className="error-message"><FiInfo /> {error}</div>}
           </form>
         </FormLayout>
       </div>

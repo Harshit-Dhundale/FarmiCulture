@@ -79,8 +79,6 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-module.exports = router;
-
 // 🔹 Add a Reply to a Post (Protected Route)
 router.post(
   '/:postId/replies',
@@ -119,6 +117,23 @@ router.delete('/:postId', authMiddleware, async (req, res) => {
     res.json({ message: 'Post deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+router.put('/:postId', authMiddleware, async (req, res) => {
+  try {
+    const updatedPost = await Post.findByIdAndUpdate(
+      req.params.postId,
+      req.body,
+      { new: true }
+    );
+    if (!updatedPost) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    res.json(updatedPost);
+  } catch (error) {
+    console.error("Error updating post:", error);
+    res.status(500).json({ error: 'Failed to update post' });
   }
 });
 

@@ -47,5 +47,5 @@ def predict_disease():
         result = get_diseases_classes(crop, prediction)
         return jsonify({'prediction': result})
 
-if __name__ == '__main__':
-    app.run(port=os.getenv('PORT', 5001), debug=os.getenv('DEBUG', True))
+# if __name__ == '__main__':
+#     app.run(port=os.getenv('PORT', 5001), debug=os.getenv('DEBUG', False))

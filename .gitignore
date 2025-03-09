@@ -2,3 +2,4 @@ node_modules/
 python-service/venv/
 .env
 client/.env
+scripts\sendMailTest.js

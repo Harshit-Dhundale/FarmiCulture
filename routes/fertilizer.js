@@ -57,10 +57,12 @@ router.post('/predict_fertilizer',
       const { num_features, cat_features } = req.body;
   
       try {
-          const pythonResponse = await axios.post('http://localhost:5001/predict_fertilizer', { num_features, cat_features });
-  
+        const pythonResponse = await axios.post(
+            `${process.env.PYTHON_SERVICE}/predict_fertilizer`,
+            { num_features, cat_features }
+          );
           const recommendation = pythonResponse.data; // Get recommendation from Python service
-  
+
           // Save to MongoDB
           const newFertilizer = new Fertilizer({
               soilTemperature: num_features[0],

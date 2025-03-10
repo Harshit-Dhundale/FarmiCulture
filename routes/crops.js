@@ -68,7 +68,7 @@ router.post('/predict_crop',
   handleValidationErrors,
   async (req, res) => {
     try {
-        const pythonResponse = await axios.post('http://localhost:5001/predict_crop', req.body);
+        const pythonResponse = await axios.post(`${process.env.PYTHON_SERVICE}/predict_crop`, req.body);
         res.json(pythonResponse.data);
     } catch (error) {
         res.status(500).json({ 

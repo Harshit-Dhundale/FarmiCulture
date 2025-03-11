@@ -39,13 +39,20 @@ def predict_disease():
     crop = request.form['crop']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
-    if file:
+    try:
+        # Ensure the upload folder exists
+        if not os.path.exists(app.config['UPLOAD_FOLDER']):
+            os.makedirs(app.config['UPLOAD_FOLDER'])
+
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
         prediction = img_predict(file_path, crop)
         result = get_diseases_classes(crop, prediction)
         return jsonify({'prediction': result})
+    except Exception as e:
+        logging.exception("Error in predict_disease")
+        return jsonify({'error': str(e)}), 500
 
 # if __name__ == '__main__':
 #     app.run(port=os.getenv('PORT', 5001), debug=os.getenv('DEBUG', False))

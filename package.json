@@ -6,7 +6,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node scripts/seedProducts.js",
-    "client": "npm start --prefix client",
+    "client": "cd client && cross-env PORT=3000 npm start",
     "dev:fullstack": "concurrently \"npm run dev\" \"npm run client\""
   },
   "keywords": [],
@@ -50,6 +50,7 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
     "nodemon": "^3.1.9"
   }
 }

@@ -31,10 +31,13 @@ router.post(
       // Forward the file and crop to the Python service for prediction
       let form = new FormData();
       form.append("crop", crop);
-      form.append("file", fs.createReadStream(req.file.path));
+      // Pass the original filename as the third parameter
+      form.append(
+        "file",
+        fs.createReadStream(req.file.path),
+        req.file.originalname
+      );
 
-      // Adjust the Python service URL/port as needed (here we assume port 5001)
-      // Adjust the Python service URL/port as needed
       const pythonResponse = await axios.post(
         `${process.env.PYTHON_SERVICE}/predict_disease`,
         form,

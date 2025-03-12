@@ -2,17 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import HeroHeader from '../../components/common/HeroHeader';
-import { FiArrowLeft, FiAlertTriangle, FiCreditCard, FiInfo, FiClock, FiDollarSign, FiRefreshCw } from 'react-icons/fi';
+import {
+  FiArrowLeft,
+  FiAlertTriangle,
+  FiCreditCard,
+  FiInfo,
+  FiClock,
+  FiDollarSign,
+  FiRefreshCw,
+} from 'react-icons/fi';
 import './RetryPayment.css';
 
 const RetryPayment = () => {
+  // `orderId` is the MongoDB _id from the URL
   const { orderId } = useParams();
   const navigate = useNavigate();
+
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 1) Fetch the original order details
+  // 1) Fetch the original order details using `orderId` (the MongoDB _id)
   useEffect(() => {
     const fetchOrder = async () => {
       try {
@@ -26,7 +36,8 @@ const RetryPayment = () => {
         setLoading(false);
       }
     };
-    fetchOrder();
+
+   if (orderId) fetchOrder();
   }, [orderId]);
 
   // 2) Handle the “Retry Payment” button
@@ -70,12 +81,12 @@ const RetryPayment = () => {
         subtitle={`Order ID: ${orderId}`}
         backgroundImage="/assets/head/failure.jpg"
       />
-      
+
       <div className="retry-payment-content">
         <h2>
           <FiAlertTriangle /> Payment Required
         </h2>
-        
+
         <div className="order-details-card">
           <div className="order-detail-item">
             <span className="detail-label">
@@ -85,7 +96,7 @@ const RetryPayment = () => {
               {new Date(orderData.createdAt).toLocaleDateString()}
             </span>
           </div>
-          
+
           <div className="order-detail-item">
             <span className="detail-label">
               <FiInfo /> Items
@@ -94,7 +105,7 @@ const RetryPayment = () => {
               {orderData.products.length} items
             </span>
           </div>
-          
+
           <div className="order-detail-item">
             <span className="detail-label">
               <FiDollarSign /> Total Amount
@@ -114,8 +125,11 @@ const RetryPayment = () => {
           <button className="btn btn-primary" onClick={handleRetryPayment}>
             <FiCreditCard /> Retry Payment Now
           </button>
-          
-          <button className="btn btn-secondary" onClick={() => navigate('/order-history')}>
+
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate('/order-history')}
+          >
             <FiRefreshCw /> View Order History
           </button>
         </div>

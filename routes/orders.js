@@ -246,30 +246,41 @@ router.patch('/:id/status', async (req, res) => {
  * PAYMENT RETRY ENDPOINT
  * =========================
  */
-router.post('/:id/retry', async (req, res) => {
+router.post('/:id/retry', authMiddleware, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
+
     if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
+      return res.status(404).json({ 
+        error: 'Order not found',
+        code: 'ORDER_NOT_FOUND'
+      });
     }
 
-    // Create a new Razorpay order for retry
+    // Create new Razorpay order
     const razorpayOrder = await razorpay.orders.create({
-      amount: order.totalAmount * 100,
+      amount: Math.round(order.totalAmount * 100), // Convert to paisa
       currency: 'INR',
       receipt: `retry_${order.orderId}`,
     });
 
-    // Update the existing order with new Razorpay Order ID
+    // Update order with new Razorpay Order ID
     order.razorpayOrderId = razorpayOrder.id;
     await order.save();
 
-    return res.json({ success: true, razorpayOrder });
+    return res.json({ 
+      success: true, 
+      razorpayOrder,
+      orderId: order._id // Returning the MongoDB _id as the identifier
+    });
+    
   } catch (error) {
     console.error('Payment retry failed:', error);
-    return res
-      .status(500)
-      .json({ error: 'Payment retry failed', details: error.message });
+    return res.status(500).json({
+      error: 'Payment retry failed',
+      code: 'RETRY_FAILED',
+      details: error.message
+    });
   }
 });
 
@@ -322,6 +333,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
       .json({ error: 'Failed to delete order', details: error.message });
   }
 });
+
 // POST /api/orders/:orderId/notes
 router.post('/:orderId/notes', async (req, res) => {
   try {

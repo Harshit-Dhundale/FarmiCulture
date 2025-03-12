@@ -38,7 +38,7 @@ const PaymentSuccess = () => {
         )}
         <div className="action-buttons">
           <Link to="/" className="btn">Go to Home</Link>
-          <Link to="/dashboard" className="btn btn-secondary">View Dashboard</Link>
+          <Link to="/order-history" className="btn btn-secondary">View Orders</Link>
         </div>
       </div>
     </div>

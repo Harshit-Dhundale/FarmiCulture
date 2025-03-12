@@ -101,7 +101,7 @@ function App() {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/payment-success" element={<PaymentSuccess />} />
-                <Route path="/payment-failure" element={<PaymentFailure />} />
+                <Route path="/payment-failed" element={<PaymentFailure />} />
                 <Route path="/order-history" element={<OrderHistory />} />
                 <Route path="/retry-payment/:orderId" element={<RetryPayment />} />
                 <Route

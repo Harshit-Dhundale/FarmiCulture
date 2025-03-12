@@ -179,7 +179,7 @@ const Checkout = () => {
             });
           }
         },
-        
+
         prefill: {
           name: currentUser.username || currentUser.fullName,
           email: currentUser.email,
@@ -204,7 +204,7 @@ const Checkout = () => {
         navigate('/payment-failed', {
           state: {
             error: response.error.description,
-            orderId: data.order.orderId
+            _id: data.order._id
           }
         });
       });

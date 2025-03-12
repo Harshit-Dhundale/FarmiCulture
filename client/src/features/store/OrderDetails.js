@@ -78,7 +78,6 @@ const handleRetry = async () => {
     // Call the backend retry endpoint using the current order id.
     // Remove the unused 'response' variable by simply awaiting the call.
     await axios.post(`/api/orders/${order._id}/retry`);
-    // Then navigate to the retry payment page.
     navigate(`/retry-payment/${order._id}`);
   } catch (error) {
     console.error("Retry Payment error:", error);

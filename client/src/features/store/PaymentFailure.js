@@ -8,30 +8,42 @@ import './PaymentOutcome.css';
 const PaymentFailure = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  // Assume orderId is passed in location.state
-  const { orderId } = location.state || {};
+
+  // Pull `_id` from location.state instead of `orderId`
+  const { _id } = location.state || {};
 
   const handleRetry = async () => {
-    if (!orderId) {
-      alert('Order ID not found for retry');
+    if (!_id) {
+      alert('Order reference not found');
       return;
     }
+
     try {
-      const response = await axios.post(`/api/orders/${orderId}/retry`);
-      // After retry, navigate to a dedicated retry payment page
-      navigate(`/retry-payment/${orderId}`, { state: { razorpayOrder: response.data.razorpayOrder } });
+      const response = await axios.post(`/api/orders/${_id}/retry`);
+      // Navigate to retry payment page with new Razorpay order details
+      navigate(`/retry-payment/${_id}`, {
+        state: {
+          razorpayOrder: response.data.razorpayOrder},
+      });
+
     } catch (error) {
-      console.error("Retry Payment error:", error);
-      alert("Unable to retry payment at this time.");
+      console.error('Retry Payment error:', error);
+      alert(error.response?.data?.error || 'Payment retry failed');
+      const errorCode = error.response?.data?.code || 'UNKNOWN_ERROR';
+
+      // Optionally redirect user if order is not found
+      if (errorCode === 'ORDER_NOT_FOUND') {
+        navigate('/order-history');
+      }
     }
   };
 
   return (
     <div className="payment-outcome-page">
-      <HeroHeader 
-        title="Payment Failed" 
-        subtitle="There was an issue processing your payment." 
-        backgroundImage="/assets/head/failure.jpg" 
+      <HeroHeader
+        title="Payment Failed"
+        subtitle="There was an issue processing your payment."
+        backgroundImage="/assets/head/failure.jpg"
       />
       <div className="payment-content">
         <h2>Payment was not successful.</h2>

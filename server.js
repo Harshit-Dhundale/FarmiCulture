@@ -86,6 +86,10 @@ app.use(`${baseApiPath}/upload`, uploadRoutes);
 // Serve static files from the "uploads" folder
 app.use('/uploads', express.static('uploads'));
 
+require('./jobs/orderVerification');
+require('./jobs/cleanFailedOrder');
+require('./jobs/deliveryStatusUpdate');
+
 // API Endpoints for Interacting with Python Services
 app.post(`${baseApiPath}/predict_crop`, async (req, res) => {
   try {

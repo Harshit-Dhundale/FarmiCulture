@@ -37,6 +37,7 @@ import AdminPanel from "./features/admin/AdminPanel";
 import ForgotPassword from "./features/auth/ForgotPassword";
 import ForgotPasswordOTP from "./features/auth/ForgotPasswordOTP";
 import ResetPassword from "./features/auth/ResetPassword";
+import RetryPayment from "./features/store/RetryPayment";
 
 function App() {
   useEffect(() => {
@@ -102,11 +103,14 @@ function App() {
                 <Route path="/payment-success" element={<PaymentSuccess />} />
                 <Route path="/payment-failure" element={<PaymentFailure />} />
                 <Route path="/order-history" element={<OrderHistory />} />
+                <Route path="/retry-payment/:orderId" element={<RetryPayment />} />
                 <Route
                   path="/order-details/:orderId"
                   element={<OrderDetails />}
                 />
                 <Route path="/admin" element={<AdminPanel />} />
+                {/* Fallback route */}
+                <Route path="*" element={<div>404 Not Found</div>} />
               </Route>
             </Route>
           </Routes>

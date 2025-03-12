@@ -11,6 +11,7 @@ import {
   FiUser,
   FiMapPin,
   FiDollarSign,
+  FiAlertCircle,
 } from "react-icons/fi";
 import HeroHeader from "../../components/common/HeroHeader";
 import "./OrderDetails.css";
@@ -37,6 +38,14 @@ const OrderDetails = () => {
   }, [orderId]);
 
   const getStatusBadge = (status) => {
+    if (!status) {
+      return (
+        <span className="status-badge" style={{ backgroundColor: "#6c757d" }}>
+          N/A
+        </span>
+      );
+    }
+  
     const statusColors = {
       paid: "#28a745",
       pending: "#ffc107",
@@ -45,7 +54,7 @@ const OrderDetails = () => {
       shipped: "#007bff",
       delivered: "#28a745",
     };
-
+  
     return (
       <span
         className="status-badge"
@@ -62,6 +71,20 @@ const OrderDetails = () => {
     navigator.clipboard.writeText(text);
     alert("Copied to clipboard!");
   };
+  
+  // Retry payment handler
+const handleRetry = async () => {
+  try {
+    // Call the backend retry endpoint using the current order id.
+    // Remove the unused 'response' variable by simply awaiting the call.
+    await axios.post(`/api/orders/${order._id}/retry`);
+    // Then navigate to the retry payment page.
+    navigate(`/retry-payment/${order._id}`);
+  } catch (error) {
+    console.error("Retry Payment error:", error);
+    alert("Unable to retry payment at this time.");
+  }
+};
 
   if (loading)
     return (
@@ -196,7 +219,7 @@ const OrderDetails = () => {
               </div>
             </div>
 
-            {/* Payment Information Card (Only if Razorpay ID exists) */}
+            {/* Payment Information Card */}
             {order.razorpayPaymentId && (
               <div className="card payment-card">
                 <h2>
@@ -226,6 +249,17 @@ const OrderDetails = () => {
                     </span>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Retry Payment Option for Failed or Pending Orders */}
+            {(!order.razorpayPaymentId &&
+              (order.paymentStatus.toLowerCase() === "failed" ||
+               order.paymentStatus.toLowerCase() === "pending")) && (
+              <div className="retry-payment-container">
+                <button onClick={handleRetry} className="btn retry-button">
+                  <FiAlertCircle /> Retry Payment
+                </button>
               </div>
             )}
           </div>

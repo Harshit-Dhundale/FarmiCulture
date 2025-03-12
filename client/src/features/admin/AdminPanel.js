@@ -1,4 +1,3 @@
-// client/src/features/admin/AdminPanel.js
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from 'react-router-dom';
@@ -22,7 +21,9 @@ const AdminPanel = () => {
   const [globalError, setGlobalError] = useState("");
   const navigate = useNavigate();
 
-  // Filter states for products
+  // ----------------------
+  // PRODUCT FILTER STATES
+  // ----------------------
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterSubCategory, setFilterSubCategory] = useState("All");
   const [filterMinPrice, setFilterMinPrice] = useState("");
@@ -30,11 +31,18 @@ const AdminPanel = () => {
   const [filterMinStock, setFilterMinStock] = useState("");
   const [filterMaxStock, setFilterMaxStock] = useState("");
 
-  // Modal states for add/edit product
+  // ----------------------
+  // ORDER FILTER STATES
+  // ----------------------
+  const [filterDeliveryStatus, setFilterDeliveryStatus] = useState("All");
+
+  // MODAL (ADD/EDIT PRODUCTS)
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
-  // Fetch products
+  // --------------------------------
+  // FETCH PRODUCTS ON COMPONENT LOAD
+  // --------------------------------
   const fetchProducts = () => {
     setLoadingProducts(true);
     axios.get("/api/products")
@@ -52,7 +60,9 @@ const AdminPanel = () => {
     fetchProducts();
   }, []);
 
-  // Fetch orders
+  // --------------------------------
+  // FETCH ORDERS ON COMPONENT LOAD
+  // --------------------------------
   useEffect(() => {
     setLoadingOrders(true);
     axios.get("/api/orders")
@@ -66,6 +76,9 @@ const AdminPanel = () => {
       });
   }, []);
 
+  // ----------------------
+  // PRODUCT CRUD HANDLERS
+  // ----------------------
   const deleteProduct = async (id) => {
     try {
       await axios.delete(`/api/products/${id}`);
@@ -75,19 +88,16 @@ const AdminPanel = () => {
     }
   };
 
-  // Open modal for new product
   const openNewProductModal = () => {
     setEditingProduct(null);
     setModalOpen(true);
   };
 
-  // Open modal for editing product
   const openEditProductModal = (product) => {
     setEditingProduct(product);
     setModalOpen(true);
   };
 
-  // Handle save from modal (for add or edit)
   const handleSaveProduct = async (productData) => {
     try {
       if (editingProduct) {
@@ -102,7 +112,24 @@ const AdminPanel = () => {
     }
   };
 
-  // Filter products for display
+  // ----------------------
+  // ORDER CRUD HANDLERS
+  // ----------------------
+  const deleteOrder = async (id) => {
+    if (window.confirm("Are you sure you want to delete this order?")) {
+      try {
+        await axios.delete(`/api/orders/${id}`);
+        setOrders(orders.filter(order => order._id !== id));
+      } catch (error) {
+        console.error("Failed to delete order", error);
+        alert("Failed to delete order. Please try again.");
+      }
+    }
+  };
+
+  // -----------------------------
+  // FILTER: Products
+  // -----------------------------
   const filteredProducts = products.filter(prod => {
     const catMatch = filterCategory === "All" || prod.category === filterCategory;
     const subCatMatch = filterSubCategory === "All" || prod.subCategory === filterSubCategory;
@@ -110,15 +137,27 @@ const AdminPanel = () => {
     const maxPriceMatch = !filterMaxPrice || prod.price <= Number(filterMaxPrice);
     const minStockMatch = !filterMinStock || prod.stock >= Number(filterMinStock);
     const maxStockMatch = !filterMaxStock || prod.stock <= Number(filterMaxStock);
+
     return catMatch && subCatMatch && minPriceMatch && maxPriceMatch && minStockMatch && maxStockMatch;
   });
 
-  // Get subcategory options for filtering
   const getFilterSubcategories = () => {
     if (filterCategory === "All") return [];
     return subCategories[filterCategory] || [];
   };
 
+  // -----------------------------
+  // FILTER: Orders by Delivery Status
+  // -----------------------------
+  const filteredOrders = orders.filter(order => {
+    // “All” passes everything, otherwise match the order’s deliveryStatus
+    return filterDeliveryStatus === "All"
+      || order.deliveryStatus === filterDeliveryStatus;
+  });
+
+  // -----------------------------
+  // RENDER
+  // -----------------------------
   return (
     <div>
       <HeroHeader 
@@ -126,23 +165,28 @@ const AdminPanel = () => {
         subtitle="Manage your products and orders" 
         backgroundImage="/assets/head/profile.jpg"
       />
+
       <div className="admin-panel">
         {globalError && <p className="error">{globalError}</p>}
+
         <div className="admin-tabs">
-          <button 
-            className={activeTab === "products" ? "active" : ""} 
+          <button
+            className={activeTab === "products" ? "active" : ""}
             onClick={() => setActiveTab("products")}
           >
             Manage Products
           </button>
-          <button 
-            className={activeTab === "orders" ? "active" : ""} 
+          <button
+            className={activeTab === "orders" ? "active" : ""}
             onClick={() => setActiveTab("orders")}
           >
             Manage Orders
           </button>
         </div>
 
+        {/* ------------------------------------ */}
+        {/* TAB: Products                        */}
+        {/* ------------------------------------ */}
         {activeTab === "products" && (
           <div className="admin-products">
             <div className="admin-products-header">
@@ -151,52 +195,86 @@ const AdminPanel = () => {
                 Add Product
               </button>
             </div>
-            {/* Filter Panel */}
+
+            {/* Product Filter Panel */}
             <div className="admin-filter-panel">
               <div className="filter-group">
                 <label>Category:</label>
-                <select 
-                  value={filterCategory} 
-                  onChange={e => { setFilterCategory(e.target.value); setFilterSubCategory("All"); }}
+                <select
+                  value={filterCategory}
+                  onChange={e => {
+                    setFilterCategory(e.target.value);
+                    setFilterSubCategory("All");
+                  }}
                 >
                   <option value="All">All</option>
                   {Object.keys(subCategories).map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
                   ))}
                 </select>
               </div>
+
               {filterCategory !== "All" && (
                 <div className="filter-group">
                   <label>Subcategory:</label>
-                  <select 
-                    value={filterSubCategory} 
+                  <select
+                    value={filterSubCategory}
                     onChange={e => setFilterSubCategory(e.target.value)}
                   >
                     <option value="All">All</option>
                     {getFilterSubcategories().map(sub => (
-                      <option key={sub} value={sub}>{sub}</option>
+                      <option key={sub} value={sub}>
+                        {sub}
+                      </option>
                     ))}
                   </select>
                 </div>
               )}
+
               <div className="filter-group">
                 <label>Min Price:</label>
-                <input type="number" value={filterMinPrice} onChange={e => setFilterMinPrice(e.target.value)} placeholder="₹" />
+                <input
+                  type="number"
+                  value={filterMinPrice}
+                  onChange={e => setFilterMinPrice(e.target.value)}
+                  placeholder="₹"
+                />
               </div>
+
               <div className="filter-group">
                 <label>Max Price:</label>
-                <input type="number" value={filterMaxPrice} onChange={e => setFilterMaxPrice(e.target.value)} placeholder="₹" />
+                <input
+                  type="number"
+                  value={filterMaxPrice}
+                  onChange={e => setFilterMaxPrice(e.target.value)}
+                  placeholder="₹"
+                />
               </div>
+
               <div className="filter-group">
                 <label>Min Stock:</label>
-                <input type="number" value={filterMinStock} onChange={e => setFilterMinStock(e.target.value)} placeholder="Stock" />
+                <input
+                  type="number"
+                  value={filterMinStock}
+                  onChange={e => setFilterMinStock(e.target.value)}
+                  placeholder="Stock"
+                />
               </div>
+
               <div className="filter-group">
                 <label>Max Stock:</label>
-                <input type="number" value={filterMaxStock} onChange={e => setFilterMaxStock(e.target.value)} placeholder="Stock" />
+                <input
+                  type="number"
+                  value={filterMaxStock}
+                  onChange={e => setFilterMaxStock(e.target.value)}
+                  placeholder="Stock"
+                />
               </div>
             </div>
 
+            {/* Products Table */}
             {loadingProducts ? (
               <p>Loading products...</p>
             ) : (
@@ -256,10 +334,31 @@ const AdminPanel = () => {
           </div>
         )}
 
+        {/* ------------------------------------ */}
+        {/* TAB: Orders                          */}
+        {/* ------------------------------------ */}
         {activeTab === "orders" && (
           <div className="admin-orders">
             <h2>Orders</h2>
-            {loadingOrders ? <p>Loading orders...</p> : (
+
+            {/* Delivery Status Filter */}
+            <div className="order-filter-panel">
+              <label>Delivery Status:</label>
+              <select
+                value={filterDeliveryStatus}
+                onChange={(e) => setFilterDeliveryStatus(e.target.value)}
+              >
+                <option value="All">All Delivery Statuses</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="out-for-delivery">Out for Delivery</option>
+                <option value="delivered">Delivered</option>
+              </select>
+            </div>
+
+            {loadingOrders ? (
+              <p>Loading orders...</p>
+            ) : (
               <table className="admin-table">
                 <thead>
                   <tr>
@@ -275,18 +374,42 @@ const AdminPanel = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order, index) => (
+                  {filteredOrders.map((order, index) => (
                     <tr key={order._id}>
                       <td>{index + 1}</td>
                       <td>{order.orderId}</td>
-                      <td>{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}</td>
-                      <td>{order.user && order.user.username ? order.user.username : 'N/A'}</td>
+                      <td>
+                        {order.createdAt
+                          ? new Date(order.createdAt).toLocaleDateString()
+                          : 'N/A'}
+                      </td>
+                      <td>
+                        {order.user && order.user.username
+                          ? order.user.username
+                          : 'N/A'}
+                      </td>
                       <td>₹{order.totalAmount}</td>
                       <td>{order.paymentStatus}</td>
                       <td>{order.deliveryStatus}</td>
-                      <td>{order.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString() : 'N/A'}</td>
                       <td>
-                        <button className="btn-view" onClick={() => navigate(`/order-details/${order._id}`)}>View Details</button>
+                        {order.estimatedDelivery
+                          ? new Date(order.estimatedDelivery).toLocaleDateString()
+                          : 'N/A'}
+                      </td>
+                      <td>
+                        <button
+                          className="btn-view"
+                          onClick={() => navigate(`/order-details/${order._id}`)}
+                        >
+                          View Details
+                        </button>
+                        <button
+                          className="btn-delete"
+                          onClick={() => deleteOrder(order._id)}
+                          style={{ marginLeft: "8px" }}
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -296,8 +419,9 @@ const AdminPanel = () => {
           </div>
         )}
       </div>
+
       {modalOpen && (
-        <ProductModal 
+        <ProductModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           onSave={handleSaveProduct}

@@ -5,12 +5,20 @@ const Product = require('../models/Product.js');
 const crypto = require('crypto');
 const razorpay = require('../config/razorpay.js');
 const dotenv = require('dotenv');
+const { sendOrderConfirmationEmail } = require('../services/emailService');
+
+// Import your middlewares (make sure these exist in your project)
+const authMiddleware = require('../middleware/authMiddleware.js');
 
 dotenv.config();
 
 const router = express.Router();
 
-// ✅ Order Creation with Validation
+/**
+ * ================================================
+ * CREATE ORDER (No immediate stock decrement here)
+ * ================================================
+ */
 router.post(
   '/create',
   [
@@ -22,10 +30,12 @@ router.post(
     body('shippingAddress.street').notEmpty().withMessage('Street address required'),
     body('shippingAddress.city').notEmpty().withMessage('City required'),
     body('shippingAddress.state').notEmpty().withMessage('State required'),
-    body('shippingAddress.postalCode').isPostalCode('IN').withMessage('Invalid Indian postal code'),
+    body('shippingAddress.postalCode')
+      .isPostalCode('IN')
+      .withMessage('Invalid Indian postal code'),
   ],
   async (req, res) => {
-    // ✅ Validate request body
+    // Validate request body
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -38,11 +48,13 @@ router.post(
       console.log('Received order creation request:', req.body);
       const { user, products, totalAmount, shippingAddress } = req.body;
 
-      // ✅ Validate products exist and have sufficient stock
+      // Validate that products exist and have enough stock (no decrement yet)
       for (const item of products) {
         const product = await Product.findById(item.product);
         if (!product) {
-          return res.status(400).json({ error: `Product ${item.product} not found` });
+          return res.status(400).json({
+            error: `Product ${item.product} not found`,
+          });
         }
         if (product.stock < item.quantity) {
           return res.status(400).json({
@@ -51,14 +63,14 @@ router.post(
         }
       }
 
-      // ✅ Create Razorpay order
+      // Create a Razorpay order
       const razorpayOrder = await razorpay.orders.create({
         amount: Math.round(totalAmount * 100),
         currency: 'INR',
         receipt: `order_${Date.now()}`,
       });
 
-      // ✅ Save the order in the database
+      // Save the order in the database (still no stock decrement here)
       const order = new Order({
         user,
         products: products.map((p) => ({
@@ -69,17 +81,17 @@ router.post(
         totalAmount: parseFloat(totalAmount),
         razorpayOrderId: razorpayOrder.id,
         shippingAddress,
-        estimatedDelivery: new Date(Date.now() + 5 * 86400000), // 5 days
+        estimatedDelivery: new Date(Date.now() + 5 * 86400000), // ~5 days
       });
 
       await order.save();
 
-      // ✅ Populate user & products before sending response
+      // Populate user & products for response
       const populatedOrder = await Order.findById(order._id)
         .populate('user', 'username email')
         .populate('products.product', 'name price imageUrl');
 
-      res.json({
+      return res.json({
         success: true,
         razorpayOrder: {
           id: razorpayOrder.id,
@@ -95,7 +107,7 @@ router.post(
       });
     } catch (error) {
       console.error('Order creation error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Order creation failed',
         details: error.error?.description || error.message,
         stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
@@ -104,22 +116,28 @@ router.post(
   }
 );
 
-// ✅ Verify Razorpay Payment
+/**
+ * ===============================================
+ * VERIFY RAZORPAY PAYMENT & DECREMENT STOCK HERE
+ * ===============================================
+ */
 router.post('/verify', async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
   try {
-    // 🔹 Validate Razorpay Signature
+    // Validate Razorpay signature
     const generatedSignature = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest('hex');
 
     if (generatedSignature !== razorpay_signature) {
-      return res.status(400).json({ success: false, error: 'Payment verification failed' });
+      return res
+        .status(400)
+        .json({ success: false, error: 'Payment verification failed' });
     }
 
-    // 🔹 Update order status & reduce product stock
+    // Mark order as paid and update payment ID
     const order = await Order.findOneAndUpdate(
       { razorpayOrderId: razorpay_order_id },
       {
@@ -129,67 +147,87 @@ router.post('/verify', async (req, res) => {
       { new: true }
     ).populate('user');
 
-    // 🔹 Reduce stock for each product in the order
+    // Reduce stock only AFTER successful payment
     for (const item of order.products) {
       await Product.findByIdAndUpdate(item.product, {
         $inc: { stock: -item.quantity },
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       order,
       deliveryDate: order.estimatedDelivery,
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Payment verification error' });
+    console.error('Payment verification error:', error);
+    return res
+      .status(500)
+      .json({ success: false, error: 'Payment verification error' });
   }
 });
 
-// ✅ Get orders for a specific user
+/**
+ * =============================
+ * GET ORDERS FOR A SPECIFIC USER
+ * =============================
+ */
 router.get('/user/:userId', async (req, res) => {
   try {
     const orders = await Order.find({ user: req.params.userId })
       .sort('-createdAt')
       .populate('products.product');
 
-    res.json(orders);
+    return res.json(orders);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch orders' });
+    return res.status(500).json({ error: 'Failed to fetch orders' });
   }
 });
 
-// ✅ Get all orders (Admin View)
+/**
+ * =========================
+ * GET ALL ORDERS (ADMIN)
+ * =========================
+ */
 router.get('/', async (req, res) => {
   try {
     const orders = await Order.find({})
       .populate('user', 'username email')
       .sort('-createdAt');
 
-    res.json(orders);
+    return res.json(orders);
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching orders' });
+    return res.status(500).json({ error: 'Error fetching orders' });
   }
 });
 
-
-// routes/orders.js
+/**
+ * =========================
+ * GET SINGLE ORDER BY ID
+ * =========================
+ */
 router.get('/:id', async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate('user', 'username email')
-      .populate('products.product', 'name price imageUrl');  // Include imageUrl here
+      .populate('products.product', 'name price imageUrl');
+
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
-    res.json(order);
+
+    return res.json(order);
   } catch (error) {
     console.error('Error fetching order:', error);
-    res.status(500).json({ error: 'Error fetching order' });
+    return res.status(500).json({ error: 'Error fetching order' });
   }
 });
 
-// ✅ Update Order Delivery Status (Admin)
+/**
+ * ==================================
+ * UPDATE ORDER DELIVERY STATUS (ADMIN)
+ * ==================================
+ */
 router.patch('/:id/status', async (req, res) => {
   try {
     const order = await Order.findByIdAndUpdate(
@@ -197,13 +235,17 @@ router.patch('/:id/status', async (req, res) => {
       { deliveryStatus: req.body.status },
       { new: true }
     );
-    res.json(order);
+    return res.json(order);
   } catch (error) {
-    res.status(500).json({ error: 'Status update failed' });
+    return res.status(500).json({ error: 'Status update failed' });
   }
 });
 
-// ✅ Payment Retry Endpoint
+/**
+ * =========================
+ * PAYMENT RETRY ENDPOINT
+ * =========================
+ */
 router.post('/:id/retry', async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -211,24 +253,31 @@ router.post('/:id/retry', async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // 🔹 Create a new Razorpay order for retrying payment
+    // Create a new Razorpay order for retry
     const razorpayOrder = await razorpay.orders.create({
       amount: order.totalAmount * 100,
       currency: 'INR',
       receipt: `retry_${order.orderId}`,
     });
 
-    // 🔹 Update order with new Razorpay order ID
+    // Update the existing order with new Razorpay Order ID
     order.razorpayOrderId = razorpayOrder.id;
     await order.save();
 
-    res.json({ success: true, razorpayOrder });
+    return res.json({ success: true, razorpayOrder });
   } catch (error) {
-    res.status(500).json({ error: 'Payment retry failed', details: error.message });
+    console.error('Payment retry failed:', error);
+    return res
+      .status(500)
+      .json({ error: 'Payment retry failed', details: error.message });
   }
 });
 
-// ✅ Admin Order Filters (By Status & Date Range)
+/**
+ * ================================================
+ * ADMIN ORDER FILTERS (BY STATUS & DATE RANGE)
+ * ================================================
+ */
 router.get('/admin', async (req, res) => {
   try {
     const { status, startDate, endDate } = req.query;
@@ -242,14 +291,67 @@ router.get('/admin', async (req, res) => {
       };
     }
 
-    // 🔹 Fetch filtered orders & include user details
     const orders = await Order.find(filter)
       .populate('user', 'name email')
       .sort('-createdAt');
 
-    res.json(orders);
+    return res.json(orders);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch orders', details: error.message });
+    console.error('Failed to fetch orders:', error);
+    return res
+      .status(500)
+      .json({ error: 'Failed to fetch orders', details: error.message });
+  }
+});
+
+/**
+ * ======================
+ * DELETE ORDER (ADMIN)
+ * ======================
+ */
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    return res.json({ success: true, message: 'Order deleted successfully' });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: 'Failed to delete order', details: error.message });
+  }
+});
+// POST /api/orders/:orderId/notes
+router.post('/:orderId/notes', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { noteText } = req.body; // { noteText: "Some comment" }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Add a note
+    order.orderNotes.push({ text: noteText });
+    await order.save();
+
+    return res.json(order);
+  } catch (err) {
+    console.error("Error adding note:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// New endpoint for sending confirmation email
+router.post('/send-confirmation', async (req, res) => {
+  try {
+    const { email, orderDetails } = req.body;
+    await sendOrderConfirmationEmail(email, orderDetails);
+    res.status(200).json({ message: 'Confirmation email sent' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error sending confirmation email' });
   }
 });
 

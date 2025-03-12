@@ -3,7 +3,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: process.env.REACT_APP_BACKEND || 'http://localhost:5000/api',
   withCredentials: true,
-  timeout: 10000, // 10 seconds timeout
+  timeout: 30000, // 10 seconds timeout
 });
 
 // Add request interceptor for JWT
@@ -61,15 +61,22 @@ export const fertilizerAPI = {
 };
 
 // Disease API
+// export const diseaseAPI = {
+//   predict: (formData) =>
+//     api.post('/predict_disease', formData, {
+//       headers: { 'Content-Type': 'multipart/form-data' },
+//     }),
+//   create: (formData) =>
+//     api.post('/diseases', formData, {
+//       headers: { 'Content-Type': 'multipart/form-data' },
+//     }),
+//   getUserPredictions: (userId) => api.get(`/diseases/user/${userId}`)
+// };
+
+// Disease API
 export const diseaseAPI = {
-  predict: (formData) =>
-    api.post('/predict_disease', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-  create: (formData) =>
-    api.post('/diseases', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  predict: (formData) => api.post('/predict_disease', formData),
+  create: (formData) => api.post('/diseases', formData, { timeout: 50000 }),
   getUserPredictions: (userId) => api.get(`/diseases/user/${userId}`)
 };
 

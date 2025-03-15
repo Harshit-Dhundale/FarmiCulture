@@ -1,9 +1,9 @@
 const { google } = require('googleapis');
 const readline = require('readline');
 
-const CLIENT_ID = '478574382172-rsnnjm16nmq9oulsmgcrkh971c7uj3g6.apps.googleusercontent.com';
-const CLIENT_SECRET = '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';
-const REDIRECT_URI = 'https://localhost:3000'; // e.g., "http://localhost:5000/oauth2callback"
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const REDIRECT_URI = process.env.REDIRECT_URI;
 
 const oAuth2Client = new google.auth.OAuth2(
   CLIENT_ID,

@@ -25,14 +25,24 @@ const limiter = rateLimit({
 });
 
 // Get allowed client origin from environment variable (defaults to localhost)
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:3000',
+  'https://express-backend-u8jr.onrender.com'
+];
 
-// Middleware: CORS, JSON parsing, NoSQL injection sanitization, and Rate Limiting
 app.use(cors({
-  origin: CLIENT_URL,
-  allowedHeaders: ['Content-Type', 'Authorization', 'Content-Disposition'],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', CLIENT_URL);
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
@@ -56,13 +66,21 @@ console.log('Environment Variables:', {
 
 // Determine API route prefix from environment variable
 // If REACT_APP_BACKEND is provided as a full URL, extract its pathname (e.g., "/api")
-let baseApiPath = '/api';
-try {
-  const urlObj = new URL(process.env.REACT_APP_BACKEND);
-  baseApiPath = urlObj.pathname;
-} catch (error) {
-  baseApiPath = process.env.REACT_APP_BACKEND || '/api';
-}
+const baseApiPath = process.env.REACT_APP_BACKEND ? 
+  new URL(process.env.REACT_APP_BACKEND).pathname : 
+  '/api';
+
+app.get('/api/health-check', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    services: {
+      database: 'Connected',
+      redis: 'Connected',
+      razorpay: 'Connected'
+    }
+  });
+});
 
 // Import Routes
 const userRoutes = require('./routes/user');

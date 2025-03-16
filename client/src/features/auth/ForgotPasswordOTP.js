@@ -18,7 +18,7 @@ const ForgotPasswordOTP = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await axios.post("http://localhost:5000/api/users/verify-forgot-password-otp", { email, otp });
+      await axios.post(`${process.env.REACT_APP_BACKEND}/users/verify-forgot-password-otp`, { email, otp });
       navigate("/reset-password", { state: { email } });
     } catch (err) {
       setError(err.response?.data?.message || "Invalid OTP");

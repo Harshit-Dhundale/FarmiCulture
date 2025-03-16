@@ -46,6 +46,13 @@ app.use(limiter);
 
 // Connect to MongoDB
 connectDB();
+// Log environment variables on startup
+console.log('Environment Variables:', {
+  NODE_ENV: process.env.NODE_ENV,
+  PORT: process.env.PORT,
+  MONGO_URI: process.env.MONGO_URI ? 'exists' : 'missing',
+  CORS_ORIGIN: process.env.CLIENT_URL
+});
 
 // Determine API route prefix from environment variable
 // If REACT_APP_BACKEND is provided as a full URL, extract its pathname (e.g., "/api")

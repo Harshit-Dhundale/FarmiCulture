@@ -23,7 +23,7 @@ const ResetPassword = () => {
     }
     setIsSubmitting(true);
     try {
-      const res = await axios.post(`${process.env.REACT_APP_BACKEND}/users/reset-password`, {
+      const res = await axios.post(`https://express-backend-u8jr.onrender.com/api/users/reset-password`, {
         email,
         newPassword,
       });

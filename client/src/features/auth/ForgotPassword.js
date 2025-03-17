@@ -17,7 +17,7 @@ const ForgotPassword = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const res = await axios.post(`${process.env.REACT_APP_BACKEND}/users/forgot-password`, { email });
+      const res = await axios.post(`https://express-backend-u8jr.onrender.com/api/users/forgot-password`, { email });
 setMessage(res.data.message);
       // Redirect to OTP verification page with email as state
       navigate("/forgot-password/otp", { state: { email } });

@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_BACKEND,
+  baseURL: "https://express-backend-u8jr.onrender.com/api",
   withCredentials: true,
-  timeout: 30000, // 10 seconds timeout
+  // timeout: 50000,
 });
 
 // Add request interceptor for JWT

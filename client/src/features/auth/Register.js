@@ -100,7 +100,7 @@ const Register = () => {
     }
     setIsSubmitting(true);
     try {
-      await axios.post(`${process.env.REACT_APP_BACKEND}/users/send-otp`, { email: formData.email });
+      await axios.post(`https://express-backend-u8jr.onrender.com/api/users/send-otp`, { email: formData.email });
       setOtpSent(true);
     } catch (error) {
       setErrors({ form: error.response?.data?.message || "Error sending OTP" });

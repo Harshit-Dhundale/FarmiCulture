@@ -25,31 +25,18 @@ const limiter = rateLimit({
 });
 
 // Get allowed client origin from environment variable (defaults to localhost)
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  'http://localhost:3000',
-  'https://express-backend-u8jr.onrender.com'
-];
+// const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 
+// Middleware: CORS, JSON parsing, NoSQL injection sanitization, and Rate Limiting
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+  origin: (origin, callback) => {
+    callback(null, origin || "*"); // Allow requests from any origin
   },
+  allowedHeaders: ["Content-Type", "Authorization", "Content-Disposition"],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ["GET", "POST", "PUT", "DELETE"],
 }));
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', CLIENT_URL);
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  next();
-});
 app.use(express.json());
 app.use(mongoSanitize());
 app.use(limiter);
@@ -66,9 +53,7 @@ console.log('Environment Variables:', {
 
 // Determine API route prefix from environment variable
 // If REACT_APP_BACKEND is provided as a full URL, extract its pathname (e.g., "/api")
-const baseApiPath = process.env.REACT_APP_BACKEND ? 
-  new URL(process.env.REACT_APP_BACKEND).pathname : 
-  '/api';
+const baseApiPath = "/api";
 
 app.get('/api/health-check', (req, res) => {
   res.status(200).json({

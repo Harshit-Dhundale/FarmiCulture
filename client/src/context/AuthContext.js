@@ -1,6 +1,6 @@
 // context/AuthContext.js
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../utils/api'; 
 
 const AuthContext = createContext();
 
@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     if (!token) return false;
     try {
-      const response = await axios.get('/api/users/validate-token', {
+      const response = await api.get('/users/validate-token', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.valid && response.data.user) {

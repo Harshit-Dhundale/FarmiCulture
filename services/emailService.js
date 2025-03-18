@@ -1,7 +1,6 @@
-// services/emailService.js
 const nodemailer = require('nodemailer');
 const { google } = require('googleapis');
-const path = require('path'); // Added to resolve the file path
+const path = require('path');
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
@@ -16,8 +15,18 @@ const oAuth2Client = new google.auth.OAuth2(
 );
 oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
-const sendOrderConfirmationEmail = async (toEmail, orderDetails, user) => {
+const sendOrderConfirmationEmail = async (toEmail, orderDetails = {}, user = {}) => {
   try {
+    // Fallback values for order details
+    const orderId = orderDetails.orderId || 'N/A';
+    const products = Array.isArray(orderDetails.products) ? orderDetails.products : [];
+    const totalAmount = orderDetails.totalAmount != null ? orderDetails.totalAmount : 0;
+    const deliveryDate = orderDetails.deliveryDate ? new Date(orderDetails.deliveryDate).toDateString() : 'N/A';
+    const trackingLink = orderDetails.trackingLink || '#';
+
+    // Fallback for user data
+    const userName = user.name || 'Valued Customer';
+
     const accessTokenResponse = await oAuth2Client.getAccessToken();
     const accessToken = accessTokenResponse.token;
 
@@ -33,125 +42,142 @@ const sendOrderConfirmationEmail = async (toEmail, orderDetails, user) => {
       },
     });
 
-    // Updated email template: using the embedded logo (CID) in the header.
+    // Generate the HTML for the products table with a fallback (empty array if no products)
+    const productsHtml = products.map(p => `
+      <tr>
+        <td>${p.name || 'Product N/A'}</td>
+        <td>${p.quantity || 0}</td>
+        <td>₹${(p.price && p.quantity ? (p.price * p.quantity).toFixed(2) : '0.00')}</td>
+      </tr>
+    `).join('');
+
+    // Enhanced Email Template with fallbacks for missing data
     const emailTemplate = `
       <!DOCTYPE html>
       <html lang="en">
       <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Order Confirmation - FarmiCulture</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
         <style>
-          /* Embedded CSS for email compatibility */
-          body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background: #f7fafc; }
-          .container { max-width: 800px; margin: 0 auto; background: white; }
-          .header { background: #2f855a; padding: 2rem; text-align: center; }
-          .logo { width: 120px; height: auto; }
-          .content { padding: 2rem; color: #2d3748; }
-          .order-card { background: #f7fafc; border-radius: 8px; padding: 1.5rem; margin: 1rem 0; }
-          .icon { color: #2f855a; margin-right: 8px; font-size: 18px; }
-          .product-list { width: 100%; border-collapse: collapse; }
-          .product-list td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
-          .track-button { 
-            background: #2f855a; color: white; 
-            padding: 12px 24px; border-radius: 6px; 
-            text-decoration: none; display: inline-block;
+          /* Reset styles and base font */
+          body, table, td, div, p { 
+            margin: 0; padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
           }
-          .footer { background: #edf2f7; padding: 1.5rem; text-align: center; }
+          body { background: #f4f4f4; }
+          .email-wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; }
+          /* Header */
+          .header { 
+            background: linear-gradient(135deg, #2f855a, #38a169); 
+            padding: 30px; 
+            text-align: center; 
+          }
+          .header img { width: 120px; height: auto; }
+          .header h1 { color: #ffffff; font-size: 24px; margin: 15px 0 5px; }
+          .header p { color: rgba(255,255,255,0.9); font-size: 16px; }
+          /* Content */
+          .content { padding: 20px; color: #333333; }
+          .order-summary { background: #f7fafc; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+          .order-summary h2 { color: #2f855a; margin-bottom: 10px; }
+          .product-table { width: 100%; border-collapse: collapse; }
+          .product-table th, .product-table td { padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+          .order-total { text-align: right; font-weight: bold; margin-top: 10px; }
+          .cta-button { 
+            display: inline-block; 
+            padding: 12px 20px; 
+            background: linear-gradient(135deg, #2f855a, #38a169); 
+            color: #ffffff; 
+            text-decoration: none; 
+            border-radius: 6px; 
+            font-weight: 600; 
+            margin: 20px 0; 
+            transition: transform 0.2s;
+          }
+          .cta-button:hover { transform: translateY(-2px); }
+          .tracking-box { background: #fff5f5; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 20px; }
+          /* Footer */
+          .footer { background: #edf2f7; padding: 20px; text-align: center; color: #718096; font-size: 14px; }
+          .footer a { color: #2f855a; text-decoration: none; margin: 0 8px; }
+          /* Responsive */
+          @media screen and (max-width: 600px) {
+            .email-wrapper { width: 100% !important; }
+          }
         </style>
       </head>
       <body>
-        <div class="container">
+        <div class="email-wrapper">
+          <!-- Header -->
           <div class="header">
-            <!-- Use the attached logo via CID -->
-            <img src="cid:logo@farmiculture" class="logo" alt="FarmiCulture Logo">
+            <img src="cid:logo@farmiculture" alt="FarmiCulture Logo" />
+            <h1>Order Confirmed!</h1>
+            <p>Thank you for your purchase, ${userName}!</p>
           </div>
-          
+          <!-- Content -->
           <div class="content">
-            <h1 style="color: #2f855a;">Order Confirmation 🎉</h1>
-            <p>Hi ${user.name}, thank you for your order!</p>
-            
-            <div class="order-card">
-              <h2 style="margin-top: 0;">
-                <i class="fas fa-receipt icon"></i>
-                Order Summary
-              </h2>
-              
-              <table class="product-list">
-                ${orderDetails.products.map(p => `
+            <p>Your order has been successfully confirmed and is now being processed. Below is your order summary:</p>
+            <div class="order-summary">
+              <h2>Order #${orderId}</h2>
+              <table class="product-table">
+                <thead>
                   <tr>
-                    <td>${p.name}</td>
-                    <td>${p.quantity} x ₹${p.price}</td>
-                    <td>₹${(p.quantity * p.price).toFixed(2)}</td>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Total</th>
                   </tr>
-                `).join('')}
+                </thead>
+                <tbody>
+                  ${productsHtml}
+                </tbody>
               </table>
-              
-              <div style="margin-top: 1.5rem;">
-                <p>
-                  <i class="fas fa-wallet icon"></i>
-                  <strong>Total Amount:</strong> ₹${orderDetails.totalAmount}
-                </p>
-                <p>
-                  <i class="fas fa-truck icon"></i>
-                  <strong>Estimated Delivery:</strong> 
-                  ${new Date(orderDetails.deliveryDate).toLocaleDateString()}
-                </p>
-              </div>
+              <p class="order-total">Grand Total: ₹${totalAmount}</p>
             </div>
-  
-            <div style="text-align: center; margin: 2rem 0;">
-              <a href="${orderDetails.trackingLink}" class="track-button">
-                <i class="fas fa-map-marker-alt"></i>
-                Track Your Order
+            <div style="text-align: center;">
+              <a href="${trackingLink}" class="cta-button">
+                <i class="fas fa-map-marker-alt"></i> Track Your Order
               </a>
             </div>
-  
-            <div style="margin-top: 2rem;">
-              <h3><i class="fas fa-info-circle icon"></i> Next Steps</h3>
-              <ul style="list-style: none; padding-left: 0;">
-                <li><i class="fas fa-check-circle" style="color: #2f855a;"></i> Your payment has been received</li>
-                <li><i class="fas fa-box" style="color: #2f855a;"></i> We're preparing your order for shipment</li>
-                <li><i class="fas fa-phone" style="color: #2f855a;"></i> Contact support: support@farmiculture.com</li>
-              </ul>
+            <div class="tracking-box">
+              <p><i class="fas fa-truck"></i> Estimated Delivery: <strong>${deliveryDate}</strong></p>
             </div>
+            <p>If you have any questions, please <a href="mailto:support@farmiculture.com">contact our support team</a>.</p>
           </div>
-  
+          <!-- Footer -->
           <div class="footer">
             <p>Follow us on:</p>
-            <div style="margin: 1rem 0;">
-              <a href="[Facebook URL]" style="color: #2d3748; margin: 0 8px;">
-                <i class="fab fa-facebook fa-lg"></i>
-              </a>
-              <a href="[Twitter URL]" style="color: #2d3748; margin: 0 8px;">
-                <i class="fab fa-twitter fa-lg"></i>
-              </a>
-              <a href="[Instagram URL]" style="color: #2d3748; margin: 0 8px;">
-                <i class="fab fa-instagram fa-lg"></i>
-              </a>
-            </div>
-            <p style="font-size: 0.9rem; color: #718096;">
-              © ${new Date().getFullYear()} FarmiCulture. All rights reserved.<br>
-              [Company Address] | <a href="[Privacy Policy URL]">Privacy Policy</a>
+            <p>
+              <a href="[Facebook URL]"><i class="fab fa-facebook-f"></i></a>
+              <a href="[Twitter URL]"><i class="fab fa-twitter"></i></a>
+              <a href="[Instagram URL]"><i class="fab fa-instagram"></i></a>
             </p>
+            <p>&copy; ${new Date().getFullYear()} FarmiCulture<br />
+            123 Farm Street, Agro City, IN 560001<br />
+            <a href="[Privacy Policy URL]">Privacy Policy</a> | 
+            <a href="[Terms of Service URL]">Terms of Service</a></p>
           </div>
         </div>
       </body>
       </html>
-      `;
+    `;
 
     const mailOptions = {
       from: `FarmiCulture 🌱 <${EMAIL_USER}>`,
       to: toEmail,
-      subject: `🎉 Your FarmiCulture Order #${orderDetails.orderId} is Confirmed!`,
+      subject: `✅ Order #${orderId} Confirmed! Your Supplies Are On Their Way`,
       html: emailTemplate,
-      attachments: [{
-        // Attach the local logo image
-        filename: 'logo1.jpg',
-        path: path.join(__dirname, '../client/public/assets/logo1.jpg'),
-        cid: 'logo@farmiculture' // same CID as in the email template
-      }]
+      attachments: [
+        {
+          filename: 'logo1.jpg',
+          path: path.join(__dirname, '../client/public/assets/logo1.jpg'),
+          cid: 'logo@farmiculture'
+        },
+        {
+          filename: 'farm-banner.jpg',
+          path: path.join(__dirname, '../client/public/assets/farm-background.jpg'),
+          cid: 'banner@farmiculture'
+        }
+      ]
     };
 
     const result = await transporter.sendMail(mailOptions);

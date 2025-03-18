@@ -1,7 +1,7 @@
 // OrderHistory.js
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from '../../utils/api';
 import { 
   FiPackage, 
   FiCalendar, 
@@ -22,14 +22,15 @@ const OrderHistory = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await axios.get(`/api/orders/user/${currentUser._id}`);
-        setOrders(response.data);
-      } catch (error) {
-        console.error("Error fetching orders:", error);
-      }
-    };
+
+const fetchOrders = async () => {
+  try {
+    const response = await api.get(`/orders/user/${currentUser._id}`);
+    setOrders(response.data);
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+  }
+};
 
     if (currentUser && currentUser._id) {
       fetchOrders();

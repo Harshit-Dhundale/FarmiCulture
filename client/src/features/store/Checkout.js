@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useNavigate, useLocation } from 'react-router-dom';
-import HeroHeader from '../../components/common/HeroHeader';
-import { useAuth } from '../../context/AuthContext';
-import './Checkout.css';
-import { FiArrowLeft, FiCreditCard, FiTruck } from 'react-icons/fi';
+import React, { useEffect, useState } from "react";
+import api from "../../utils/api";
+import { useNavigate, useLocation } from "react-router-dom";
+import HeroHeader from "../../components/common/HeroHeader";
+import { useAuth } from "../../context/AuthContext";
+import "./Checkout.css";
+import { FiArrowLeft, FiCreditCard, FiTruck } from "react-icons/fi";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -21,11 +21,11 @@ const Checkout = () => {
 
   // Shipping Address state
   const [shippingAddress, setShippingAddress] = useState({
-    street: currentUser?.address?.street || '',
-    city: currentUser?.address?.city || '',
-    state: currentUser?.address?.state || '',
-    postalCode: currentUser?.address?.postalCode || '',
-    country: currentUser?.address?.country || 'India'
+    street: currentUser?.address?.street || "",
+    city: currentUser?.address?.city || "",
+    state: currentUser?.address?.state || "",
+    postalCode: currentUser?.address?.postalCode || "",
+    country: currentUser?.address?.country || "India",
   });
 
   // -----------------------------
@@ -37,11 +37,14 @@ const Checkout = () => {
       setCart(
         retryOrder.products.map((item) => ({
           product: item.product, // includes _id, name, imageUrl, etc.
-          quantity: item.quantity
+          quantity: item.quantity,
         }))
       );
       setTotal(
-        retryOrder.products.reduce((sum, item) => sum + item.price * item.quantity, 0)
+        retryOrder.products.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        )
       );
       setShippingAddress((prev) => ({
         ...prev,
@@ -49,7 +52,7 @@ const Checkout = () => {
       }));
     } else {
       // Otherwise, fallback to localStorage
-      const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
+      const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
       setCart(storedCart);
       const sum = storedCart.reduce(
         (acc, item) => acc + item.product.price * item.quantity,
@@ -74,8 +77,8 @@ const Checkout = () => {
   // -----------------------------
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
       script.onload = () => resolve(true);
       script.onerror = () => resolve(false);
       document.body.appendChild(script);
@@ -84,21 +87,25 @@ const Checkout = () => {
 
   const handlePayment = async () => {
     // Basic validation
-    if (!shippingAddress.street || !shippingAddress.city || 
-        !shippingAddress.state || !shippingAddress.postalCode) {
-      alert('Please fill in all required address fields.');
+    if (
+      !shippingAddress.street ||
+      !shippingAddress.city ||
+      !shippingAddress.state ||
+      !shippingAddress.postalCode
+    ) {
+      alert("Please fill in all required address fields.");
       return;
     }
 
     if (!cart.length) {
-      alert('Your cart is empty');
+      alert("Your cart is empty");
       return;
     }
 
     setLoading(true);
     try {
       const scriptLoaded = await loadRazorpayScript();
-      if (!scriptLoaded) throw new Error('Payment gateway failed to load');
+      if (!scriptLoaded) throw new Error("Payment gateway failed to load");
 
       // Prepare the order payload (for either brand-new order or a retry)
       // If you want to reuse the original “orderId” in the backend, you can pass it here.
@@ -107,28 +114,28 @@ const Checkout = () => {
         products: cart.map((item) => ({
           product: item.product._id,
           quantity: Number(item.quantity),
-          price: parseFloat(item.product.price || item.price)
+          price: parseFloat(item.product.price || item.price),
         })),
         totalAmount: parseFloat(total.toFixed(2)),
         shippingAddress,
         originalOrderId: retryOrder?._id || null, // so the backend knows it's a retry
       };
 
-      const { data } = await axios.post('/api/orders/create', orderPayload, {
+      const { data } = await api.post("/orders/create", orderPayload, {
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
 
-      console.log('Order creation response:', data); // Debug log
+      console.log("Order creation response:", data); // Debug log
 
       // Validate Razorpay response
       if (!data?.razorpayOrder?.id || !data?.order?.orderId) {
-        throw new Error('Invalid order creation response');
+        throw new Error("Invalid order creation response");
       }
       if (!window.Razorpay) {
-        throw new Error('Razorpay not loaded');
+        throw new Error("Razorpay not loaded");
       }
 
       const options = {
@@ -138,54 +145,54 @@ const Checkout = () => {
         name: 'FarmiCulture Equipment',
         description: `Order ${data.order.orderId}`,
         order_id: data.razorpayOrder.id,
-        handler: async (response) => {
-          try {
-            const { data: verification } = await axios.post('/api/orders/verify', {
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature
-            });
-        
-            if (verification.success) {
-              // Payment verified: send confirmation email via your new endpoint
-              await axios.post('/api/orders/send-confirmation', {
-                email: currentUser.email,
-                orderDetails: {
-                  orderId: verification.order.orderId,
-                  totalAmount: verification.order.totalAmount,
-                  deliveryDate: verification.deliveryDate
-                }
-              });
-        
-              // Clear cart and navigate to the payment success page
-              localStorage.removeItem('cart');
-              navigate('/payment-success', {
-                state: {
-                  orderId: verification.order.orderId,
-                  amount: verification.order.totalAmount,
-                  deliveryDate: verification.deliveryDate
-                }
-              });
-            } else {
-              // Payment verification failed
-              navigate('/payment-failed', {
-                state: { error: verification.error }
-              });
-            }
-          } catch (error) {
-            console.error('Verification error:', error);
-            navigate('/payment-failed', {
-              state: { error: error.response?.data?.error || 'Payment verification failed' }
-            });
-          }
-        },
+        // In the handler function within Checkout.js
+handler: async (response) => {
+  try {
+    const { data: verification } = await api.post('/orders/verify', {
+      razorpay_payment_id: response.razorpay_payment_id,
+      razorpay_order_id: response.razorpay_order_id,
+      razorpay_signature: response.razorpay_signature
+    });
 
+    if (verification.success) {
+      // Immediately navigate to success page
+      localStorage.removeItem('cart');
+      navigate('/payment-success', {
+        state: {
+          orderId: verification.order.orderId,
+          amount: verification.order.totalAmount,
+          deliveryDate: verification.deliveryDate
+        }
+      });
+
+      // Send confirmation email in the background (don't await)
+      api.post('/orders/send-confirmation', {
+        email: currentUser.email,
+        orderDetails: {
+          orderId: verification.order.orderId,
+          totalAmount: verification.order.totalAmount,
+          deliveryDate: verification.deliveryDate,
+        },
+          user : currentUser,
+      }).catch(emailError => {
+        console.error('Email sending failed:', emailError);
+      });
+      
+    } else {
+      navigate('/payment-failed', { state: { error: verification.error } });
+    }
+  } catch (error) {
+    console.error('Verification error:', error);
+    navigate('/payment-failed', {
+      state: { error: error.response?.data?.error || 'Payment verification failed' }
+    });
+  }
+},
         prefill: {
           name: currentUser.username || currentUser.fullName,
           email: currentUser.email,
           contact: currentUser.phone || '9999999999'
         },
-        // Razorpay theming & modal
         theme: { color: '#2e7d32' },
         modal: {
           ondismiss: () => {
@@ -193,25 +200,25 @@ const Checkout = () => {
             alert('Payment cancelled. Please try again if needed.');
           }
         }
-      };
+      };      
 
       const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', (response) => {
-        console.error('Payment failed:', response.error);
+      rzp.on("payment.failed", (response) => {
+        console.error("Payment failed:", response.error);
         alert(`Payment failed: ${response.error.description}`);
         setLoading(false);
         // Navigate to payment failure page and pass the error details
-        navigate('/payment-failed', {
+        navigate("/payment-failed", {
           state: {
             error: response.error.description,
-            _id: data.order._id
-          }
+            _id: data.order._id,
+          },
         });
       });
 
       rzp.open();
     } catch (error) {
-      console.error('Full payment error:', error);
+      console.error("Full payment error:", error);
       const serverError = error.response?.data?.error;
       const validationError = error.response?.data?.errors?.[0]?.msg;
       const errorMessage = serverError || validationError || error.message;
@@ -221,7 +228,7 @@ const Checkout = () => {
 
       // Clear cart if order creation fails with a 400
       if (error.response?.status === 400) {
-        localStorage.removeItem('cart');
+        localStorage.removeItem("cart");
         setCart([]);
       }
     }
@@ -363,7 +370,7 @@ const Checkout = () => {
                 className="btn-pay"
                 disabled={loading}
               >
-                {loading ? 'Processing...' : `Pay ₹${total.toFixed(2)}`}
+                {loading ? "Processing..." : `Pay ₹${total.toFixed(2)}`}
               </button>
 
               <p className="security-note">

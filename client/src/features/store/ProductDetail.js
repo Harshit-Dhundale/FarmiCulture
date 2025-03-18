@@ -1,6 +1,6 @@
 // client/src/features/store/ProductDetail.js
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../../utils/api';
 import { useParams } from 'react-router-dom';
 import { ErrorBoundary } from 'react-error-boundary';
 import HeroHeader from '../../components/common/HeroHeader';
@@ -13,15 +13,16 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get(`/api/products/${id}`)
-      .then(res => {
-        setProduct(res.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Error fetching product:", err);
-        setLoading(false);
-      });
+
+api.get(`/products/${id}`)
+  .then(res => {
+    setProduct(res.data);
+    setLoading(false);
+  })
+  .catch(err => {
+    console.error("Error fetching product:", err);
+    setLoading(false);
+  });
   }, [id]);
 
   const addToCart = () => {

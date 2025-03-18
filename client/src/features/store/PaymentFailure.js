@@ -1,7 +1,7 @@
 // client/src/features/store/PaymentFailure.js
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../utils/api';
 import HeroHeader from '../../components/common/HeroHeader';
 import './PaymentOutcome.css';
 
@@ -19,12 +19,13 @@ const PaymentFailure = () => {
     }
 
     try {
-      const response = await axios.post(`/api/orders/${_id}/retry`);
-      // Navigate to retry payment page with new Razorpay order details
-      navigate(`/retry-payment/${_id}`, {
-        state: {
-          razorpayOrder: response.data.razorpayOrder},
-      });
+
+const response = await api.post(`/orders/${_id}/retry`);
+navigate(`/retry-payment/${_id}`, {
+  state: {
+    razorpayOrder: response.data.razorpayOrder,
+  },
+});
 
     } catch (error) {
       console.error('Retry Payment error:', error);

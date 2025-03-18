@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import LoadingSpinner from './LoadingSpinner';
 import './CommentForm.css'; // Create this CSS file
 
-const CommentForm = ({ onSubmit, isSubmitting }) => {
+const CommentForm = ({ onSubmit = () => {}, isSubmitting = false }) => {
   const [text, setText] = useState('');
   const [error, setError] = useState('');
 
@@ -39,12 +39,8 @@ const CommentForm = ({ onSubmit, isSubmitting }) => {
 };
 
 CommentForm.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func,
   isSubmitting: PropTypes.bool,
-};
-
-CommentForm.defaultProps = {
-  isSubmitting: false,
 };
 
 export default CommentForm;

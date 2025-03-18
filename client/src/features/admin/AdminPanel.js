@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from 'react-router-dom';
 import HeroHeader from "../../components/common/HeroHeader";
 import ProductModal from "./ProductModal";
 import "./AdminPanel.css";
+import api from "../../utils/api";
 
 const subCategories = {
   "Crop Seeds": ["Cereals", "Pulses", "Oilseeds", "Vegetables", "Fruits"],
@@ -45,15 +45,16 @@ const AdminPanel = () => {
   // --------------------------------
   const fetchProducts = () => {
     setLoadingProducts(true);
-    axios.get("/api/products")
-      .then((res) => {
-        setProducts(res.data);
-        setLoadingProducts(false);
-      })
-      .catch(() => {
-        setGlobalError("Failed to load products");
-        setLoadingProducts(false);
-      });
+
+api.get("/products")
+  .then((res) => {
+    setProducts(res.data);
+    setLoadingProducts(false);
+  })
+  .catch(() => {
+    setGlobalError("Failed to load products");
+    setLoadingProducts(false);
+  });
   };
 
   useEffect(() => {
@@ -65,27 +66,28 @@ const AdminPanel = () => {
   // --------------------------------
   useEffect(() => {
     setLoadingOrders(true);
-    axios.get("/api/orders")
-      .then((res) => {
-        setOrders(res.data);
-        setLoadingOrders(false);
-      })
-      .catch(() => {
-        setGlobalError("Failed to load orders");
-        setLoadingOrders(false);
-      });
+
+api.get("/orders")
+  .then((res) => {
+    setOrders(res.data);
+    setLoadingOrders(false);
+  })
+  .catch(() => {
+    setGlobalError("Failed to load orders");
+    setLoadingOrders(false);
+  });
   }, []);
 
   // ----------------------
   // PRODUCT CRUD HANDLERS
   // ----------------------
   const deleteProduct = async (id) => {
-    try {
-      await axios.delete(`/api/products/${id}`);
-      setProducts(products.filter(prod => prod._id !== id));
-    } catch (error) {
-      console.error("Failed to delete product", error);
-    }
+try {
+  await api.delete(`/products/${id}`);
+  setProducts(products.filter(prod => prod._id !== id));
+} catch (error) {
+  console.error("Failed to delete product", error);
+}
   };
 
   const openNewProductModal = () => {
@@ -99,32 +101,32 @@ const AdminPanel = () => {
   };
 
   const handleSaveProduct = async (productData) => {
-    try {
-      if (editingProduct) {
-        await axios.put(`/api/products/${editingProduct._id}`, productData);
-      } else {
-        await axios.post("/api/products", productData);
-      }
-      setModalOpen(false);
-      fetchProducts();
-    } catch (error) {
-      console.error("Failed to save product", error);
-    }
+try {
+  if (editingProduct) {
+    await api.put(`/products/${editingProduct._id}`, productData);
+  } else {
+    await api.post("/products", productData);
+  }
+  setModalOpen(false);
+  fetchProducts();
+} catch (error) {
+  console.error("Failed to save product", error);
+}
   };
 
   // ----------------------
   // ORDER CRUD HANDLERS
   // ----------------------
   const deleteOrder = async (id) => {
-    if (window.confirm("Are you sure you want to delete this order?")) {
-      try {
-        await axios.delete(`/api/orders/${id}`);
-        setOrders(orders.filter(order => order._id !== id));
-      } catch (error) {
-        console.error("Failed to delete order", error);
-        alert("Failed to delete order. Please try again.");
-      }
-    }
+if (window.confirm("Are you sure you want to delete this order?")) {
+  try {
+    await api.delete(`/orders/${id}`);
+    setOrders(orders.filter(order => order._id !== id));
+  } catch (error) {
+    console.error("Failed to delete order", error);
+    alert("Failed to delete order. Please try again.");
+  }
+}
   };
 
   // -----------------------------

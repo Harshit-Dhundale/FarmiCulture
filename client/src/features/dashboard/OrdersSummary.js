@@ -1,10 +1,10 @@
 // client/src/features/dashboard/OrdersSummary.jsx
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { FiShoppingBag, FiCheckCircle, FiClock } from 'react-icons/fi';
 import styles from './OrdersSummary.module.css';
+import api from '../../utils/api';
 
 const OrdersSummary = () => {
   const { currentUser } = useAuth();
@@ -13,16 +13,17 @@ const OrdersSummary = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const { data } = await axios.get(`/api/orders/user/${currentUser._id}`);
-        setOrders(data);
-      } catch (error) {
-        console.error('Failed to fetch orders:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+
+const fetchOrders = async () => {
+  try {
+    const { data } = await api.get(`/orders/user/${currentUser._id}`);
+    setOrders(data);
+  } catch (error) {
+    console.error('Failed to fetch orders:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
     if (currentUser && currentUser._id) {
       fetchOrders();

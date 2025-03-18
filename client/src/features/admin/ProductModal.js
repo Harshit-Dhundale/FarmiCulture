@@ -1,7 +1,7 @@
 // client/src/features/admin/ProductModal.js
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
-import axios from "axios";
+import api from "../../utils/api";
 import "./ProductModal.css";
 
 const modalRoot = document.getElementById("modal-root");
@@ -96,7 +96,7 @@ const ProductModal = ({
     
     try {
       setUploadingImage(true);
-      const response = await axios.post("/api/upload", formPayload, {
+      const response = await api.post("/upload", formPayload, {
         headers: { "Content-Type": "multipart/form-data" }
       });
       setFormData(prev => ({ ...prev, imageUrl: response.data.imageUrl }));

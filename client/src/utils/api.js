@@ -110,3 +110,5 @@ export const predictionAPI = {
   create: (data) => api.post('/predictions', data),
   getHistory: () => api.get('/predictions/history')
 };
+
+export default api;

@@ -1,9 +1,9 @@
 // client/src/features/store/Store.js
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Link } from 'react-router-dom';
 import HeroHeader from '../../components/common/HeroHeader';
 import './Store.css';
+import api from '../../utils/api';
 
 const SUBCATEGORIES = {
   'Crop Seeds': ['All', 'Cereals', 'Pulses', 'Oilseeds', 'Vegetables', 'Fruits'],
@@ -25,16 +25,16 @@ const Store = () => {
 
   // Fetch products from API
   useEffect(() => {
-    axios.get('/api/products')
-      .then(res => {
-        setProducts(res.data);
-        setIsLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setError('Failed to load products');
-        setIsLoading(false);
-      });
+    api.get('/products')
+  .then(res => {
+    setProducts(res.data);
+    setIsLoading(false);
+  })
+  .catch(err => {
+    console.error(err);
+    setError('Failed to load products');
+    setIsLoading(false);
+  });
   }, []);
 
   // Get available subcategories based on selected category

@@ -119,25 +119,26 @@ router.post(
 /**
  * ===============================================
  * VERIFY RAZORPAY PAYMENT & DECREMENT STOCK HERE
+ * (Updated: Order status is updated immediately regardless of email sending)
  * ===============================================
  */
 router.post('/verify', async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
+  // Validate Razorpay signature
+  const generatedSignature = crypto
+    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+    .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+    .digest('hex');
+
+  if (generatedSignature !== razorpay_signature) {
+    return res
+      .status(400)
+      .json({ success: false, error: 'Payment verification failed' });
+  }
+
   try {
-    // Validate Razorpay signature
-    const generatedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest('hex');
-
-    if (generatedSignature !== razorpay_signature) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'Payment verification failed' });
-    }
-
-    // Mark order as paid and update payment ID
+    // Update order status FIRST
     const order = await Order.findOneAndUpdate(
       { razorpayOrderId: razorpay_order_id },
       {
@@ -147,13 +148,14 @@ router.post('/verify', async (req, res) => {
       { new: true }
     ).populate('user');
 
-    // Reduce stock only AFTER successful payment
+    // THEN process stock reduction
     for (const item of order.products) {
       await Product.findByIdAndUpdate(item.product, {
         $inc: { stock: -item.quantity },
       });
     }
 
+    // Return success immediately (email sending, if needed, can be handled separately)
     return res.json({
       success: true,
       order,
@@ -161,9 +163,10 @@ router.post('/verify', async (req, res) => {
     });
   } catch (error) {
     console.error('Payment verification error:', error);
-    return res
-      .status(500)
-      .json({ success: false, error: 'Payment verification error' });
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Payment verification error' 
+    });
   }
 });
 
@@ -334,7 +337,9 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/orders/:orderId/notes
+/**
+ * POST /api/orders/:orderId/notes
+ */
 router.post('/:orderId/notes', async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -356,13 +361,17 @@ router.post('/:orderId/notes', async (req, res) => {
   }
 });
 
-// New endpoint for sending confirmation email
+/**
+ * New endpoint for sending confirmation email.
+ * Now, we extract 'user' from the request body and pass it along.
+ */
 router.post('/send-confirmation', async (req, res) => {
   try {
-    const { email, orderDetails } = req.body;
-    await sendOrderConfirmationEmail(email, orderDetails);
+    const { email, orderDetails, user } = req.body;
+    await sendOrderConfirmationEmail(email, orderDetails, user);
     res.status(200).json({ message: 'Confirmation email sent' });
   } catch (error) {
+    console.error("Error sending confirmation email:", error);
     res.status(500).json({ message: 'Error sending confirmation email' });
   }
 });

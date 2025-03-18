@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { userAPI, farmAPI, cropAPI, fertilizerAPI, diseaseAPI, forumAPI } from '../../utils/api';
-import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faTractor, 
@@ -17,6 +16,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import HeroHeader from '../../components/common/HeroHeader';
 import OrdersSummary from './OrdersSummary';
 import styles from './Dashboard.module.css';
+import api from '../../utils/api';
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
@@ -74,14 +74,15 @@ const Dashboard = () => {
       }
     };
 
-    const loadOrders = async () => {
-      try {
-        const { data } = await axios.get(`/api/orders/user/${currentUser._id}`);
-        setOrders(data);
-      } catch (err) {
-        console.error("Error fetching orders:", err);
-      }
-    };
+
+const loadOrders = async () => {
+  try {
+    const { data } = await api.get(`/orders/user/${currentUser._id}`);
+    setOrders(data);
+  } catch (err) {
+    console.error("Error fetching orders:", err);
+  }
+};
 
     if (currentUser) {
       Promise.all([

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../utils/api';
 import HeroHeader from '../../components/common/HeroHeader';
 import {
   FiArrowLeft,
@@ -27,7 +27,7 @@ const RetryPayment = () => {
     const fetchOrder = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get(`/api/orders/${orderId}`);
+        const { data } = await api.get(`/orders/${orderId}`);
         setOrderData(data);
       } catch (err) {
         console.error('Error fetching order for retry:', err);

@@ -11,16 +11,38 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
     setPost({ ...post, [e.target.name]: e.target.value });
   };
 
+  // ✅ Form Validation Function
+  const isFormValid = () => {
+    if (post.title.trim().length < 5) {
+      setError("Title must be at least 5 characters long.");
+      return false;
+    }
+    if (post.content.trim().length < 10) {
+      setError("Content must be at least 10 characters long.");
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    
+    // ✅ Prevent form submission if validation fails
+    if (!isFormValid()) return;
+
+    setLoading(true);
     try {
       const response = await forumAPI.createPost(post);
       onPostCreated(response.data); // Notify parent component
       onClose(); // Close modal
     } catch (err) {
-      setError('Failed to create post.');
+      // ✅ Handle API validation errors if present
+      if (err.errors) {
+        setError(err.errors.join(' '));
+      } else {
+        setError('Failed to create post.');
+      }
       console.error(err);
     } finally {
       setLoading(false);

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
   FiArrowLeft,
   FiPackage,
@@ -14,7 +13,8 @@ import {
   FiAlertCircle,
 } from "react-icons/fi";
 import HeroHeader from "../../components/common/HeroHeader";
-import "./OrderDetails.css";
+import api from "../../utils/api";
+import styles from "./OrderDetails.module.css";
 
 const OrderDetails = () => {
   const { orderId } = useParams();
@@ -25,7 +25,7 @@ const OrderDetails = () => {
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
-        const response = await axios.get(`/api/orders/${orderId}`);
+        const response = await api.get(`/orders/${orderId}`);
         setOrder(response.data);
       } catch (error) {
         console.error("Error fetching order details:", error);
@@ -40,12 +40,12 @@ const OrderDetails = () => {
   const getStatusBadge = (status) => {
     if (!status) {
       return (
-        <span className="status-badge" style={{ backgroundColor: "#6c757d" }}>
+        <span className={styles.statusBadge} style={{ backgroundColor: "#6c757d" }}>
           N/A
         </span>
       );
     }
-  
+
     const statusColors = {
       paid: "#28a745",
       pending: "#ffc107",
@@ -54,13 +54,11 @@ const OrderDetails = () => {
       shipped: "#007bff",
       delivered: "#28a745",
     };
-  
+
     return (
       <span
-        className="status-badge"
-        style={{
-          backgroundColor: statusColors[status.toLowerCase()] || "#6c757d",
-        }}
+        className={styles.statusBadge}
+        style={{ backgroundColor: statusColors[status.toLowerCase()] || "#6c757d" }}
       >
         {status}
       </span>
@@ -71,76 +69,72 @@ const OrderDetails = () => {
     navigator.clipboard.writeText(text);
     alert("Copied to clipboard!");
   };
-  
-  // Retry payment handler
-const handleRetry = async () => {
-  try {
-    // Call the backend retry endpoint using the current order id.
-    // Remove the unused 'response' variable by simply awaiting the call.
-    await axios.post(`/api/orders/${order._id}/retry`);
-    navigate(`/retry-payment/${order._id}`);
-  } catch (error) {
-    console.error("Retry Payment error:", error);
-    alert("Unable to retry payment at this time.");
-  }
-};
+
+  const handleRetry = async () => {
+    try {
+      await api.post(`/orders/${order._id}/retry`);
+      navigate(`/retry-payment/${order._id}`);
+    } catch (error) {
+      console.error("Retry Payment error:", error);
+      alert("Unable to retry payment at this time.");
+    }
+  };
 
   if (loading)
     return (
-      <div className="loading-container">
-        <div className="spinner"></div>
+      <div className={styles.loadingContainer}>
+        <div className={styles.spinner}></div>
         <p>Loading order details...</p>
       </div>
     );
 
-  if (!order) return <p className="error-message">Order not found.</p>;
+  if (!order) return <p className={styles.errorMessage}>Order not found.</p>;
 
   return (
-    <div className="order-details">
+    <div className={styles.orderDetails}>
       <HeroHeader
         title={`Order #${order.orderId}`}
         subtitle="Detailed view of your order"
         backgroundImage="/assets/head/order-history.jpg"
       />
 
-      <div className="order-details-container">
-        <button className="back-button" onClick={() => navigate(-1)}>
+      <div className={styles.orderDetailsContainer}>
+        {/* Back Button Positioned at the Top */}
+        <button className={styles.backButton} onClick={() => navigate(-1)}>
           <FiArrowLeft /> Back
         </button>
 
-        {/* Horizontal Layout */}
-        <div className="horizontal-layout">
+        <div className={styles.horizontalLayout}>
           {/* Left Column */}
-          <div className="left-column">
-            {/* Order Overview Card */}
-            <div className="card overview-card">
+          <div className={styles.leftColumn}>
+            <div className={`${styles.card} ${styles.overviewCard}`}>
               <h2>
                 <FiClipboard /> Order Overview
               </h2>
-              <div className="overview-grid">
-                <div className="overview-item">
-                  <FiUser className="icon" />
+              <div className={styles.overviewGrid}>
+                <div className={styles.overviewItem}>
+                  <FiUser className={styles.icon} />
                   <div>
                     <label>Customer</label>
                     <p>{order.user?.username || order.user?.email || "N/A"}</p>
                   </div>
                 </div>
-                <div className="overview-item">
-                  <FiClock className="icon" />
+                <div className={styles.overviewItem}>
+                  <FiClock className={styles.icon} />
                   <div>
                     <label>Order Date</label>
                     <p>{new Date(order.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
-                <div className="overview-item">
-                  <FiDollarSign className="icon" />
+                <div className={styles.overviewItem}>
+                  <FiDollarSign className={styles.icon} />
                   <div>
                     <label>Total Amount</label>
                     <p>₹{order.totalAmount.toFixed(2)}</p>
                   </div>
                 </div>
-                <div className="overview-item">
-                  <FiTruck className="icon" />
+                <div className={styles.overviewItem}>
+                  <FiTruck className={styles.icon} />
                   <div>
                     <label>Delivery Status</label>
                     {getStatusBadge(order.deliveryStatus)}
@@ -149,22 +143,20 @@ const handleRetry = async () => {
               </div>
             </div>
 
-            {/* Shipping Information Card */}
-            <div className="card shipping-card">
+            <div className={`${styles.card} ${styles.shippingCard}`}>
               <h2>
                 <FiMapPin /> Shipping Details
               </h2>
-              <div className="shipping-info">
-                <p className="address-line">{order.shippingAddress.street}</p>
-                <p className="address-line">
+              <div className={styles.shippingInfo}>
+                <p className={styles.addressLine}>{order.shippingAddress.street}</p>
+                <p className={styles.addressLine}>
                   {order.shippingAddress.city}, {order.shippingAddress.state}
                 </p>
-                <p className="address-line">
-                  {order.shippingAddress.postalCode},{" "}
-                  {order.shippingAddress.country}
+                <p className={styles.addressLine}>
+                  {order.shippingAddress.postalCode}, {order.shippingAddress.country}
                 </p>
-                <div className="delivery-estimate">
-                  <FiClock className="icon" />
+                <div className={styles.deliveryEstimate}>
+                  <FiClock className={styles.icon} />
                   <span>
                     Estimated Delivery:{" "}
                     {new Date(order.estimatedDelivery).toLocaleDateString()}
@@ -175,13 +167,12 @@ const handleRetry = async () => {
           </div>
 
           {/* Right Column */}
-          <div className="right-column">
-            {/* Order Items Card */}
-            <div className="card items-card">
+          <div className={styles.rightColumn}>
+            <div className={`${styles.card} ${styles.itemsCard}`}>
               <h2>
                 <FiPackage /> Order Items
               </h2>
-              <div className="responsive-table">
+              <div className={styles.responsiveTable}>
                 <table>
                   <thead>
                     <tr>
@@ -194,7 +185,7 @@ const handleRetry = async () => {
                   <tbody>
                     {order.products.map((item) => (
                       <tr key={item.product._id}>
-                        <td className="product-cell">
+                        <td className={styles.productCell}>
                           <img
                             src={
                               item.product?.imageUrl
@@ -204,7 +195,7 @@ const handleRetry = async () => {
                                 : "/assets/products/default.jpg"
                             }
                             alt={item.product?.name || "Product"}
-                            className="product-image"
+                            className={styles.productImage}
                           />
                           <span>{item.product.name}</span>
                         </td>
@@ -218,30 +209,29 @@ const handleRetry = async () => {
               </div>
             </div>
 
-            {/* Payment Information Card */}
             {order.razorpayPaymentId && (
-              <div className="card payment-card">
+              <div className={`${styles.card} ${styles.paymentCard}`}>
                 <h2>
                   <FiCreditCard /> Payment Details
                 </h2>
-                <div className="payment-details">
-                  <div className="payment-item">
+                <div className={styles.paymentDetails}>
+                  <div className={styles.paymentItem}>
                     <label>Payment Status:</label>
                     {getStatusBadge(order.paymentStatus)}
                   </div>
-                  <div className="payment-item">
+                  <div className={styles.paymentItem}>
                     <label>Razorpay Order ID:</label>
                     <span
-                      className="clickable-id"
+                      className={styles.clickableId}
                       onClick={() => copyToClipboard(order.razorpayOrderId)}
                     >
                       {order.razorpayOrderId}
                     </span>
                   </div>
-                  <div className="payment-item">
+                  <div className={styles.paymentItem}>
                     <label>Payment ID:</label>
                     <span
-                      className="clickable-id"
+                      className={styles.clickableId}
                       onClick={() => copyToClipboard(order.razorpayPaymentId)}
                     >
                       {order.razorpayPaymentId}
@@ -251,12 +241,11 @@ const handleRetry = async () => {
               </div>
             )}
 
-            {/* Retry Payment Option for Failed or Pending Orders */}
             {(!order.razorpayPaymentId &&
               (order.paymentStatus.toLowerCase() === "failed" ||
-               order.paymentStatus.toLowerCase() === "pending")) && (
-              <div className="retry-payment-container">
-                <button onClick={handleRetry} className="btn retry-button">
+                order.paymentStatus.toLowerCase() === "pending")) && (
+              <div className={styles.retryPaymentContainer}>
+                <button onClick={handleRetry} className={`${styles.btn} ${styles.retryButton}`}>
                   <FiAlertCircle /> Retry Payment
                 </button>
               </div>

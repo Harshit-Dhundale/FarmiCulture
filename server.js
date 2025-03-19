@@ -10,6 +10,7 @@ const multer = require('multer');
 const fs = require('fs');
 const FormData = require('form-data');
 const connectDB = require('./config/db');
+const path = require('path');
 
 // Initialize Express app
 const app = express();
@@ -94,7 +95,7 @@ app.use(`${baseApiPath}/orders`, ordersRoute);
 app.use(`${baseApiPath}/upload`, uploadRoutes);
 
 // Serve static files from the "uploads" folder
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 require('./jobs/orderVerification');
 require('./jobs/cleanFailedOrder');

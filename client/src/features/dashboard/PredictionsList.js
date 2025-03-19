@@ -68,7 +68,13 @@ const PredictionsList = ({ predictions }) => {
             let label = '';
             
             if (type === 'Disease') {
-              imgSrc = `/${pred.imageUrl.replace(/\\/g, "/")}`;
+              // Normalize the image URL: replace backslashes with forward slashes
+              // and remove any leading slash before prepending the backend URL.
+              let imgPath = pred.imageUrl.replace(/\\/g, "/");
+              if (imgPath.startsWith("/")) {
+                imgPath = imgPath.substring(1);
+              }
+              imgSrc = `https://express-backend-u8jr.onrender.com/${imgPath}`;
               label = `${pred.crop.charAt(0).toUpperCase() + pred.crop.slice(1)} - ${pred.prediction}`;
             } else {
               const rec = pred.recommendation.toLowerCase().replace(/\s+/g, '-');

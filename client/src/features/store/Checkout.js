@@ -1,25 +1,25 @@
 import React, { useEffect, useState } from "react";
-import api from "../../utils/api";
 import { useNavigate, useLocation } from "react-router-dom";
+import { FiArrowLeft, FiCreditCard, FiTruck } from "react-icons/fi";
+
+import api from "../../utils/api";
 import HeroHeader from "../../components/common/HeroHeader";
 import { useAuth } from "../../context/AuthContext";
-import "./Checkout.css";
-import { FiArrowLeft, FiCreditCard, FiTruck } from "react-icons/fi";
+
+// Import the CSS module
+import styles from "./Checkout.module.css";
 
 const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
 
-  // Grab retry data if it was passed from RetryPayment.js
   const retryOrder = location.state?.retryOrder || null;
 
-  // Cart & total states
   const [cart, setCart] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // Shipping Address state
   const [shippingAddress, setShippingAddress] = useState({
     street: currentUser?.address?.street || "",
     city: currentUser?.address?.city || "",
@@ -28,15 +28,11 @@ const Checkout = () => {
     country: currentUser?.address?.country || "India",
   });
 
-  // -----------------------------
-  // 1) On mount, decide: use retryOrder or localStorage cart
-  // -----------------------------
   useEffect(() => {
-    if (retryOrder && retryOrder.products && retryOrder.products.length) {
-      // If user arrived with an existing order, populate cart & shipping from that
+    if (retryOrder && retryOrder.products?.length) {
       setCart(
         retryOrder.products.map((item) => ({
-          product: item.product, // includes _id, name, imageUrl, etc.
+          product: item.product,
           quantity: item.quantity,
         }))
       );
@@ -51,7 +47,6 @@ const Checkout = () => {
         ...retryOrder.shippingAddress,
       }));
     } else {
-      // Otherwise, fallback to localStorage
       const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
       setCart(storedCart);
       const sum = storedCart.reduce(
@@ -62,9 +57,6 @@ const Checkout = () => {
     }
   }, [retryOrder]);
 
-  // -----------------------------
-  // 2) Handle changes to shipping address
-  // -----------------------------
   const handleAddressChange = (e) => {
     setShippingAddress((prev) => ({
       ...prev,
@@ -72,9 +64,6 @@ const Checkout = () => {
     }));
   };
 
-  // -----------------------------
-  // 3) Payment logic
-  // -----------------------------
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
       const script = document.createElement("script");
@@ -86,7 +75,6 @@ const Checkout = () => {
   };
 
   const handlePayment = async () => {
-    // Basic validation
     if (
       !shippingAddress.street ||
       !shippingAddress.city ||
@@ -96,7 +84,6 @@ const Checkout = () => {
       alert("Please fill in all required address fields.");
       return;
     }
-
     if (!cart.length) {
       alert("Your cart is empty");
       return;
@@ -107,8 +94,6 @@ const Checkout = () => {
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) throw new Error("Payment gateway failed to load");
 
-      // Prepare the order payload (for either brand-new order or a retry)
-      // If you want to reuse the original “orderId” in the backend, you can pass it here.
       const orderPayload = {
         user: currentUser._id,
         products: cart.map((item) => ({
@@ -118,7 +103,7 @@ const Checkout = () => {
         })),
         totalAmount: parseFloat(total.toFixed(2)),
         shippingAddress,
-        originalOrderId: retryOrder?._id || null, // so the backend knows it's a retry
+        originalOrderId: retryOrder?._id || null,
       };
 
       const { data } = await api.post("/orders/create", orderPayload, {
@@ -128,9 +113,6 @@ const Checkout = () => {
         },
       });
 
-      console.log("Order creation response:", data); // Debug log
-
-      // Validate Razorpay response
       if (!data?.razorpayOrder?.id || !data?.order?.orderId) {
         throw new Error("Invalid order creation response");
       }
@@ -142,72 +124,74 @@ const Checkout = () => {
         key: process.env.REACT_APP_RAZORPAY_KEY_ID,
         amount: data.razorpayOrder.amount,
         currency: data.razorpayOrder.currency,
-        name: 'FarmiCulture Equipment',
+        name: "FarmiCulture Equipment",
         description: `Order ${data.order.orderId}`,
         order_id: data.razorpayOrder.id,
-        // In the handler function within Checkout.js
-handler: async (response) => {
-  try {
-    const { data: verification } = await api.post('/orders/verify', {
-      razorpay_payment_id: response.razorpay_payment_id,
-      razorpay_order_id: response.razorpay_order_id,
-      razorpay_signature: response.razorpay_signature
-    });
+        handler: async (response) => {
+          try {
+            const { data: verification } = await api.post("/orders/verify", {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            });
 
-    if (verification.success) {
-      // Immediately navigate to success page
-      localStorage.removeItem('cart');
-      navigate('/payment-success', {
-        state: {
-          orderId: verification.order.orderId,
-          amount: verification.order.totalAmount,
-          deliveryDate: verification.deliveryDate
-        }
-      });
+            if (verification.success) {
+              localStorage.removeItem("cart");
+              navigate("/payment-success", {
+                state: {
+                  orderId: verification.order.orderId,
+                  amount: verification.order.totalAmount,
+                  deliveryDate: verification.deliveryDate,
+                },
+              });
 
-      // Send confirmation email in the background (don't await)
-      api.post('/orders/send-confirmation', {
-        email: currentUser.email,
-        orderDetails: {
-          orderId: verification.order.orderId,
-          totalAmount: verification.order.totalAmount,
-          deliveryDate: verification.deliveryDate,
+              // Fire-and-forget email
+              api
+                .post("/orders/send-confirmation", {
+                  email: currentUser.email,
+                  orderDetails: {
+                    orderId: verification.order.orderId,
+                    // You can uncomment and add other fields as needed:
+                    // totalAmount: verification.order.totalAmount,
+                    // deliveryDate: verification.deliveryDate,
+                    // products: verification.order.products,
+                  },
+                  // user: currentUser,
+                })
+                .catch((emailError) => {
+                  console.error("Email sending failed:", emailError);
+                });
+            } else {
+              navigate("/payment-failed", { state: { error: verification.error } });
+            }
+          } catch (error) {
+            console.error("Verification error:", error);
+            navigate("/payment-failed", {
+              state: {
+                error: error.response?.data?.error || "Payment verification failed",
+              },
+            });
+          }
         },
-          user : currentUser,
-      }).catch(emailError => {
-        console.error('Email sending failed:', emailError);
-      });
-      
-    } else {
-      navigate('/payment-failed', { state: { error: verification.error } });
-    }
-  } catch (error) {
-    console.error('Verification error:', error);
-    navigate('/payment-failed', {
-      state: { error: error.response?.data?.error || 'Payment verification failed' }
-    });
-  }
-},
         prefill: {
           name: currentUser.username || currentUser.fullName,
           email: currentUser.email,
-          contact: currentUser.phone || '9999999999'
+          contact: currentUser.phone || "9999999999",
         },
-        theme: { color: '#2e7d32' },
+        theme: { color: "#2e7d32" },
         modal: {
           ondismiss: () => {
             setLoading(false);
-            alert('Payment cancelled. Please try again if needed.');
-          }
-        }
-      };      
+            alert("Payment cancelled. Please try again if needed.");
+          },
+        },
+      };
 
       const rzp = new window.Razorpay(options);
       rzp.on("payment.failed", (response) => {
         console.error("Payment failed:", response.error);
         alert(`Payment failed: ${response.error.description}`);
         setLoading(false);
-        // Navigate to payment failure page and pass the error details
         navigate("/payment-failed", {
           state: {
             error: response.error.description,
@@ -226,7 +210,6 @@ handler: async (response) => {
       alert(`Payment Error: ${errorMessage}`);
       setLoading(false);
 
-      // Clear cart if order creation fails with a 400
       if (error.response?.status === 400) {
         localStorage.removeItem("cart");
         setCart([]);
@@ -234,32 +217,32 @@ handler: async (response) => {
     }
   };
 
-  // -----------------------------
-  // 4) Render
-  // -----------------------------
   return (
-    <div className="checkout-page">
+    <div className={styles["checkout-page"]}>
       <HeroHeader
         title="Secure Checkout"
         subtitle="Complete your purchase with confidence"
         backgroundImage="/assets/head/check.jpg"
       />
 
-      <div className="checkout-container">
-        <button className="btn-back" onClick={() => navigate(-1)}>
+      <div className={styles["checkout-container"]}>
+        <button
+          className={styles["btn-back"]}
+          onClick={() => navigate(-1)}
+        >
           <FiArrowLeft /> Back to Cart
         </button>
 
-        <div className="checkout-grid">
-          <div className="checkout-details">
+        <div className={styles["checkout-grid"]}>
+          <div className={styles["checkout-details"]}>
             {/* Delivery / Address */}
-            <section className="checkout-section">
+            <section className={styles["checkout-section"]}>
               <h2>
                 <FiTruck /> Delivery Information
               </h2>
-              <div className="delivery-info">
-                <div className="address-form">
-                  <div className="form-group">
+              <div className={styles["delivery-info"]}>
+                <div className={styles["address-form"]}>
+                  <div className={styles["form-group"]}>
                     <label>Street Address *</label>
                     <input
                       type="text"
@@ -269,8 +252,8 @@ handler: async (response) => {
                       required
                     />
                   </div>
-                  <div className="form-row">
-                    <div className="form-group">
+                  <div className={styles["form-row"]}>
+                    <div className={styles["form-group"]}>
                       <label>City *</label>
                       <input
                         type="text"
@@ -280,7 +263,7 @@ handler: async (response) => {
                         required
                       />
                     </div>
-                    <div className="form-group">
+                    <div className={styles["form-group"]}>
                       <label>State *</label>
                       <input
                         type="text"
@@ -291,8 +274,8 @@ handler: async (response) => {
                       />
                     </div>
                   </div>
-                  <div className="form-row">
-                    <div className="form-group">
+                  <div className={styles["form-row"]}>
+                    <div className={styles["form-group"]}>
                       <label>Postal Code *</label>
                       <input
                         type="text"
@@ -302,7 +285,7 @@ handler: async (response) => {
                         required
                       />
                     </div>
-                    <div className="form-group">
+                    <div className={styles["form-group"]}>
                       <label>Country</label>
                       <input
                         type="text"
@@ -317,13 +300,13 @@ handler: async (response) => {
             </section>
 
             {/* Payment Method */}
-            <section className="checkout-section">
+            <section className={styles["checkout-section"]}>
               <h2>
                 <FiCreditCard /> Payment Method
               </h2>
-              <div className="payment-methods">
-                <div className="payment-card active">
-                  <div className="payment-header">
+              <div className={styles["payment-methods"]}>
+                <div className={`${styles["payment-card"]} ${styles["active"]}`}>
+                  <div className={styles["payment-header"]}>
                     <img src="/assets/razorpay-logo.png" alt="Razorpay" />
                     <span>Cards, UPI, NetBanking</span>
                   </div>
@@ -334,23 +317,23 @@ handler: async (response) => {
           </div>
 
           {/* Order Summary */}
-          <div className="order-summary">
-            <div className="summary-card">
+          <div className={styles["order-summary"]}>
+            <div className={styles["summary-card"]}>
               <h2>Order Summary</h2>
-              <div className="order-items">
+              <div className={styles["order-items"]}>
                 {cart.map((item) => (
-                  <div key={item.product._id} className="order-item">
+                  <div key={item.product._id} className={styles["order-item"]}>
                     <img
                       src={item.product.imageUrl}
                       alt={item.product.name}
-                      className="item-image"
+                      className={styles["item-image"]}
                     />
-                    <div className="item-details">
+                    <div className={styles["item-details"]}>
                       <h4>{item.product.name}</h4>
-                      <p className="quantity">
+                      <p className={styles.quantity}>
                         {item.quantity} × ₹{item.product.price}
                       </p>
-                      <p className="subtotal">
+                      <p className={styles.subtotal}>
                         ₹{(item.product.price * item.quantity).toFixed(2)}
                       </p>
                     </div>
@@ -358,8 +341,8 @@ handler: async (response) => {
                 ))}
               </div>
 
-              <div className="summary-total">
-                <div className="total-row grand-total">
+              <div className={styles["summary-total"]}>
+                <div className={`${styles["total-row"]} ${styles["grand-total"]}`}>
                   <span>Total</span>
                   <span>₹{total.toFixed(2)}</span>
                 </div>
@@ -367,13 +350,13 @@ handler: async (response) => {
 
               <button
                 onClick={handlePayment}
-                className="btn-pay"
+                className={styles["btn-pay"]}
                 disabled={loading}
               >
                 {loading ? "Processing..." : `Pay ₹${total.toFixed(2)}`}
               </button>
 
-              <p className="security-note">
+              <p className={styles["security-note"]}>
                 <img src="/assets/ssl-secure.png" alt="SSL Secure" />
                 Your payment is securely encrypted
               </p>

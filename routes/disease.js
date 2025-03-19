@@ -49,7 +49,7 @@ router.post(
       // Create a new Disease record in MongoDB
       const newDisease = new Disease({
         crop: crop,
-        imageUrl: req.file.path, // You may want to serve these files statically
+        imageUrl: `/uploads/${req.file.filename}`,
         prediction: prediction,
         createdBy: req.user._id,
       });

@@ -367,12 +367,38 @@ router.post('/:orderId/notes', async (req, res) => {
  */
 router.post('/send-confirmation', async (req, res) => {
   try {
-    const { email, orderDetails, user } = req.body;
-    await sendOrderConfirmationEmail(email, orderDetails, user);
+    const { email, orderDetails } = req.body;
+    
+    // Get complete order details by querying with the custom orderId
+    const order = await Order.findOne({ orderId: orderDetails.orderId })
+      .populate({
+        path: 'products.product',
+        select: 'name price imageUrl'
+      })
+      .populate('user', 'name email');
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Transform order data for email template
+    const emailOrderDetails = {
+      orderId: order.orderId,
+      totalAmount: order.totalAmount.toFixed(2),
+      deliveryDate: order.estimatedDelivery,
+      products: order.products.map(item => ({
+        name: item.product.name,
+        price: item.price,
+        quantity: item.quantity,
+        imageUrl: item.product.imageUrl
+      }))
+    };
+
+    await sendOrderConfirmationEmail(email, emailOrderDetails, order.user);
     res.status(200).json({ message: 'Confirmation email sent' });
   } catch (error) {
-    console.error("Error sending confirmation email:", error);
-    res.status(500).json({ message: 'Error sending confirmation email' });
+    console.error('Error sending confirmation email:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 

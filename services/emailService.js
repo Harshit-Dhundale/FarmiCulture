@@ -19,6 +19,7 @@ const sendOrderConfirmationEmail = async (toEmail, orderDetails = {}, user = {})
   try {
     // Fallback values for order details
     const orderId = orderDetails.orderId || 'N/A';
+    // Ensure products are sent from the checkout process
     const products = Array.isArray(orderDetails.products) ? orderDetails.products : [];
     const totalAmount = orderDetails.totalAmount != null ? orderDetails.totalAmount : 0;
     const deliveryDate = orderDetails.deliveryDate ? new Date(orderDetails.deliveryDate).toDateString() : 'N/A';
@@ -42,16 +43,42 @@ const sendOrderConfirmationEmail = async (toEmail, orderDetails = {}, user = {})
       },
     });
 
-    // Generate the HTML for the products table with a fallback (empty array if no products)
-    const productsHtml = products.map(p => `
-      <tr>
-        <td>${p.name || 'Product N/A'}</td>
-        <td>${p.quantity || 0}</td>
-        <td>₹${(p.price && p.quantity ? (p.price * p.quantity).toFixed(2) : '0.00')}</td>
-      </tr>
-    `).join('');
+    // Build the HTML for the products table (with product images and SKU)
+    const productsHtml = products.length
+      ? products.map(p => `
+          <tr>
+            <td style="padding:8px; border-bottom:1px solid #e2e8f0; vertical-align: middle;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <img 
+                  src="${p.imageUrl || '/assets/products/default.jpg'}" 
+                  alt="${p.name}" 
+                  style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;"
+                />
+                <div>
+                  <div style="font-weight: 600;">${p.name || 'Product N/A'}</div>
+                  <div style="color: #718096;">
+                    SKU: FC-${p._id ? p._id.slice(-6) : '000000'}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td style="padding:8px; border-bottom:1px solid #e2e8f0; vertical-align: middle;">
+              ${p.quantity || 0}
+            </td>
+            <td style="padding:8px; border-bottom:1px solid #e2e8f0; vertical-align: middle;">
+              ₹${(p.price * p.quantity).toFixed(2)}
+            </td>
+          </tr>
+        `).join('')
+      : `
+        <tr>
+          <td colspan="3" style="padding:8px; text-align:center;">
+            No products in this order.
+          </td>
+        </tr>
+      `;
 
-    // Enhanced Email Template with fallbacks for missing data
+    // Updated Email Template with inline banner image and product details table
     const emailTemplate = `
       <!DOCTYPE html>
       <html lang="en">
@@ -61,14 +88,12 @@ const sendOrderConfirmationEmail = async (toEmail, orderDetails = {}, user = {})
         <title>Order Confirmation - FarmiCulture</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
         <style>
-          /* Reset styles and base font */
           body, table, td, div, p { 
             margin: 0; padding: 0; 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
           }
           body { background: #f4f4f4; }
           .email-wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; }
-          /* Header */
           .header { 
             background: linear-gradient(135deg, #2f855a, #38a169); 
             padding: 30px; 
@@ -77,7 +102,8 @@ const sendOrderConfirmationEmail = async (toEmail, orderDetails = {}, user = {})
           .header img { width: 120px; height: auto; }
           .header h1 { color: #ffffff; font-size: 24px; margin: 15px 0 5px; }
           .header p { color: rgba(255,255,255,0.9); font-size: 16px; }
-          /* Content */
+          .banner { text-align: center; }
+          .banner img { width: 100%; max-width: 600px; display: block; margin-bottom: 20px; }
           .content { padding: 20px; color: #333333; }
           .order-summary { background: #f7fafc; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
           .order-summary h2 { color: #2f855a; margin-bottom: 10px; }
@@ -97,10 +123,8 @@ const sendOrderConfirmationEmail = async (toEmail, orderDetails = {}, user = {})
           }
           .cta-button:hover { transform: translateY(-2px); }
           .tracking-box { background: #fff5f5; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 20px; }
-          /* Footer */
           .footer { background: #edf2f7; padding: 20px; text-align: center; color: #718096; font-size: 14px; }
           .footer a { color: #2f855a; text-decoration: none; margin: 0 8px; }
-          /* Responsive */
           @media screen and (max-width: 600px) {
             .email-wrapper { width: 100% !important; }
           }
@@ -113,6 +137,10 @@ const sendOrderConfirmationEmail = async (toEmail, orderDetails = {}, user = {})
             <img src="cid:logo@farmiculture" alt="FarmiCulture Logo" />
             <h1>Order Confirmed!</h1>
             <p>Thank you for your purchase, ${userName}!</p>
+          </div>
+          <!-- Inline Banner Image -->
+          <div class="banner">
+            <img src="cid:banner@farmiculture" alt="FarmiCulture Banner" />
           </div>
           <!-- Content -->
           <div class="content">
@@ -183,6 +211,7 @@ const sendOrderConfirmationEmail = async (toEmail, orderDetails = {}, user = {})
     const result = await transporter.sendMail(mailOptions);
     console.log('Order confirmation email sent:', result);
     return result;
+
   } catch (error) {
     console.error('Error sending confirmation email:', error);
     throw error;

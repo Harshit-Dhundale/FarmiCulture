@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from functions import img_predict, get_diseases_classes, get_crop_recommendation, get_fertilizer_recommendation
 from custom_json_encoder import CustomJSONEncoder
+from datetime import datetime, timezone
 
 # Load environment variables
 load_dotenv()
@@ -18,6 +19,10 @@ CORS(app)
 app.json_encoder = CustomJSONEncoder
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limit file size to 16MB
+
+@app.route('/health-check', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'OK', 'timestamp': datetime.now(timezone.utc).isoformat()}), 200
 
 @app.route('/predict_crop', methods=['POST'])
 def predict_crop():

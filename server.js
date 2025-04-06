@@ -1,5 +1,5 @@
-// Load environment variables and required modules
-require('dotenv').config();
+require('dotenv').config({ override: true });  
+console.log('🎯 Final REDIS_URL =>', process.env.REDIS_URL);
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');

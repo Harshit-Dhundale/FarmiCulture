@@ -15,6 +15,7 @@ const SCOPES = ['https://mail.google.com/'];
 
 const authUrl = oAuth2Client.generateAuthUrl({
   access_type: 'offline',
+  prompt: 'consent',
   scope: SCOPES,
 });
 
